@@ -1,0 +1,9 @@
+src/test/**
+src/__tests__/**
+src/lib/sentry/**
+src/lib/analytics/**
+src/lib/performance/**
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx

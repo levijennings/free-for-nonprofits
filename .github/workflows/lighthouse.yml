@@ -1,0 +1,122 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/lighthouse.yml'
+      - 'lighthouserc.js'
+      - 'src/**'
+      - 'pages/**'
+      - 'public/**'
+      - 'package.json'
+
+permissions:
+  contents: read
+  pull-requests: write
+  deployments: write
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Build application
+        run: npm run build
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          configPath: './lighthouserc.js'
+          runs: 1
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+        env:
+          LIGHTHOUSE_GITHUB_APP_TOKEN: ${{ secrets.LIGHTHOUSE_TOKEN }}
+
+      - name: Parse Lighthouse results
+        id: lighthouse-results
+        if: always()
+        continue-on-error: true
+        run: |
+          if [ -f lhci-results/manifest.json ]; then
+            # Extract scores from manifest
+            PERF=$(jq '.[] | .summary.performance * 100 | floor' lhci-results/manifest.json 2>/dev/null || echo "N/A")
+            A11Y=$(jq '.[] | .summary.accessibility * 100 | floor' lhci-results/manifest.json 2>/dev/null || echo "N/A")
+            BP=$(jq '.[] | .summary["best-practices"] * 100 | floor' lhci-results/manifest.json 2>/dev/null || echo "N/A")
+            SEO=$(jq '.[] | .summary.seo * 100 | floor' lhci-results/manifest.json 2>/dev/null || echo "N/A")
+
+            echo "performance=$PERF" >> $GITHUB_OUTPUT
+            echo "accessibility=$A11Y" >> $GITHUB_OUTPUT
+            echo "best_practices=$BP" >> $GITHUB_OUTPUT
+            echo "seo=$SEO" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment on PR with results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            let comment = '## Lighthouse Audit Results\n\n';
+
+            try {
+              // Try to read the manifest file
+              const manifestPath = 'lhci-results/manifest.json';
+              if (fs.existsSync(manifestPath)) {
+                const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+
+                if (manifest.length > 0) {
+                  const result = manifest[0];
+                  const summary = result.summary;
+
+                  comment += '| Metric | Score |\n';
+                  comment += '|--------|-------|\n';
+                  comment += `| Performance | ${Math.round(summary.performance * 100)}% |\n`;
+                  comment += `| Accessibility | ${Math.round(summary.accessibility * 100)}% |\n`;
+                  comment += `| Best Practices | ${Math.round(summary['best-practices'] * 100)}% |\n`;
+                  comment += `| SEO | ${Math.round(summary.seo * 100)}% |\n`;
+
+                  comment += '\n**Scoring Guide:**\n';
+                  comment += '- 90-100: Green (Good)\n';
+                  comment += '- 50-89: Orange (Needs Improvement)\n';
+                  comment += '- 0-49: Red (Poor)\n';
+                }
+              } else {
+                comment += '⚠️ Could not parse Lighthouse results\n';
+              }
+            } catch (err) {
+              comment += `⚠️ Error parsing results: ${err.message}\n`;
+            }
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Fail on Lighthouse threshold
+        run: |
+          npm run lighthouse:assert
+        continue-on-error: true
+
+      - name: Upload results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-results
+          path: lhci-results/
+          retention-days: 30

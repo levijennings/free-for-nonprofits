@@ -1,0 +1,129 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  deployments: write
+  statuses: write
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Build application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_ENVIRONMENT: production
+
+      - name: Deploy to Vercel Production
+        id: deploy
+        run: |
+          DEPLOYMENT=$(npx vercel deploy --prod)
+          echo "url=$DEPLOYMENT" >> $GITHUB_OUTPUT
+          echo "$DEPLOYMENT" > deployment-url.txt
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PRODUCTION }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+
+      - name: Wait for deployment
+        run: |
+          sleep 30
+          DEPLOYMENT_URL=$(cat deployment-url.txt)
+          for i in {1..30}; do
+            if curl -f "$DEPLOYMENT_URL" > /dev/null 2>&1; then
+              echo "Production deployment ready"
+              exit 0
+            fi
+            echo "Waiting for production deployment... attempt $i/30"
+            sleep 10
+          done
+          exit 1
+
+      - name: Run smoke tests
+        id: smoke-tests
+        run: |
+          npm run test:smoke || echo "SMOKE_TEST_FAILED=true" >> $GITHUB_ENV
+        env:
+          SMOKE_TEST_URL: ${{ steps.deploy.outputs.url }}
+        continue-on-error: true
+
+      - name: Rollback on smoke test failure
+        if: env.SMOKE_TEST_FAILED == 'true'
+        run: |
+          echo "Smoke tests failed. Rolling back to previous production deployment..."
+          # Get the previous production deployment
+          PREVIOUS=$(npx vercel ls --prod | head -2 | tail -1 | awk '{print $NF}')
+          npx vercel alias set "$PREVIOUS" $(cat deployment-url.txt) --prod
+          exit 1
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+
+      - name: Create deployment status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ github.run_id }},
+              state: 'success',
+              environment_url: '${{ steps.deploy.outputs.url }}'
+            });
+
+      - name: Notify Slack on success
+        if: success()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "Production deployment successful",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Production Deployment Successful*\n<${{ steps.deploy.outputs.url }}|View Production>\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_PRODUCTION }}
+
+      - name: Notify Slack on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "Production deployment failed - ROLLBACK INITIATED",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Production Deployment FAILED*\nAutomatic rollback initiated\nCheck <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|workflow logs>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_PRODUCTION }}

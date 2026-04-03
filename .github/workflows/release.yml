@@ -1,0 +1,185 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version-bump:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+  pull-requests: read
+  releases: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: releases
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Configure git
+        run: |
+          git config user.email "ci@dvlmnt.com"
+          git config user.name "DVLMNT Release Bot"
+
+      - name: Get current version
+        id: current-version
+        run: |
+          VERSION=$(jq -r '.version' package.json)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Calculate new version
+        id: new-version
+        run: |
+          npm install -g semver
+          CURRENT="${{ steps.current-version.outputs.version }}"
+          NEW=$(semver bump ${{ github.event.inputs.version-bump }} $CURRENT)
+          echo "version=$NEW" >> $GITHUB_OUTPUT
+          echo "Version: $CURRENT → $NEW"
+
+      - name: Update version in files
+        run: |
+          NEW_VERSION="${{ steps.new-version.outputs.version }}"
+
+          # Update package.json
+          jq --arg version "$NEW_VERSION" '.version = $version' package.json > package.json.tmp
+          mv package.json.tmp package.json
+
+          # Update package-lock.json if it exists
+          if [ -f package-lock.json ]; then
+            jq --arg version "$NEW_VERSION" '.version = $version' package-lock.json > package-lock.json.tmp
+            mv package-lock.json.tmp package-lock.json
+          fi
+
+          # Update app.json if it exists (for mobile apps)
+          if [ -f app.json ]; then
+            jq --arg version "$NEW_VERSION" '.version = $version' app.json > app.json.tmp
+            mv app.json.tmp app.json
+          fi
+
+          git add package.json package-lock.json app.json 2>/dev/null || true
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Generate changelog from conventional commits
+          npm install -g conventional-changelog-cli
+
+          # Create changelog for this release
+          CHANGELOG=$(git log v${{ steps.current-version.outputs.version }}..HEAD --oneline --format="%h %s" 2>/dev/null || echo "No commits since last release")
+
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Commit version bump
+        run: |
+          git commit -m "chore: bump version to ${{ steps.new-version.outputs.version }}"
+
+      - name: Create git tag
+        run: |
+          git tag -a v${{ steps.new-version.outputs.version }} \
+            -m "Release v${{ steps.new-version.outputs.version }}"
+
+      - name: Push changes
+        run: |
+          git push origin HEAD:main
+          git push origin v${{ steps.new-version.outputs.version }}
+
+      - name: Create GitHub Release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const changelog = `${{ steps.changelog.outputs.changelog }}`;
+
+            const releaseBody = `## Changes
+
+${changelog}
+
+## Installation
+
+Install the new version:
+
+\`\`\`bash
+npm install@${{ steps.new-version.outputs.version }}
+\`\`\`
+
+## What Changed
+
+This release includes bug fixes, improvements, and new features.
+
+### Commits
+${changelog}`;
+
+            github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: 'v${{ steps.new-version.outputs.version }}',
+              name: 'v${{ steps.new-version.outputs.version }}',
+              body: releaseBody,
+              draft: false,
+              prerelease: false
+            });
+
+      - name: Trigger production deployment
+        if: success()
+        run: |
+          echo "✓ Release v${{ steps.new-version.outputs.version }} created"
+          echo "Production deployment will be triggered automatically"
+
+      - name: Notify Slack on success
+        if: success()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "Release published successfully",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Release v${{ steps.new-version.outputs.version }} Published*\nRepository: <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}>\nTag: <${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ steps.new-version.outputs.version }}|v${{ steps.new-version.outputs.version }}>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_RELEASES }}
+
+      - name: Notify Slack on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "Release publication failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Release Failed*\nVersion: v${{ steps.new-version.outputs.version }}\nCheck <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|workflow logs>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_RELEASES }}

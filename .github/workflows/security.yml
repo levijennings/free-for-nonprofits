@@ -1,0 +1,239 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run weekly security scans every Monday at 3 AM
+    - cron: '0 3 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  npm-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Run npm audit
+        id: audit
+        continue-on-error: true
+        run: |
+          npm audit --json > audit-report.json || true
+
+          # Check for vulnerabilities
+          VULNERABILITIES=$(jq '.metadata.vulnerabilities.total' audit-report.json)
+          echo "vulnerabilities=$VULNERABILITIES" >> $GITHUB_OUTPUT
+
+          if [ "$VULNERABILITIES" -gt 0 ]; then
+            echo "Found $VULNERABILITIES vulnerabilities"
+            npm audit --audit-level=moderate || true
+          fi
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npm-audit-report
+          path: audit-report.json
+          retention-days: 30
+
+      - name: Comment on PR with audit results
+        if: github.event_name == 'pull_request' && steps.audit.outputs.vulnerabilities > 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const audit = JSON.parse(fs.readFileSync('audit-report.json', 'utf8'));
+
+            let comment = '## NPM Audit Results\n\n';
+            comment += `⚠️ Found ${audit.metadata.vulnerabilities.total} vulnerabilities\n\n`;
+            comment += '| Severity | Count |\n';
+            comment += '|----------|-------|\n';
+            comment += `| Critical | ${audit.metadata.vulnerabilities.critical || 0} |\n`;
+            comment += `| High | ${audit.metadata.vulnerabilities.high || 0} |\n`;
+            comment += `| Moderate | ${audit.metadata.vulnerabilities.moderate || 0} |\n`;
+            comment += `| Low | ${audit.metadata.vulnerabilities.low || 0} |\n`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  snyk-scan:
+    runs-on: ubuntu-latest
+    if: vars.SNYK_ENABLED == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Run Snyk scan
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --json-file-output=snyk-report.json
+
+      - name: Upload Snyk report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: snyk-report
+          path: snyk-report.json
+          retention-days: 30
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run GitLeaks scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: true
+        continue-on-error: true
+
+      - name: Upload GitLeaks report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: |
+            gitleaks.json
+            gitleaks.sarif
+          retention-days: 30
+
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript' ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Check for outdated dependencies
+        id: outdated
+        run: |
+          npm outdated --json > outdated-report.json || true
+          OUTDATED=$(jq 'length' outdated-report.json)
+          echo "outdated=$OUTDATED" >> $GITHUB_OUTPUT
+
+      - name: Upload outdated report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: outdated-dependencies
+          path: outdated-report.json
+          retention-days: 30
+
+  security-summary:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [ npm-audit, gitleaks, codeql ]
+    steps:
+      - name: Create security summary
+        uses: actions/github-script@v7
+        if: github.event_name == 'schedule'
+        with:
+          script: |
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Security Scan Summary - ${new Date().toISOString().split('T')[0]}`,
+              body: `## Security Scan Results
+
+This is an automated security scan summary.
+
+### Results
+- Check workflow artifacts for detailed reports
+- View [Security Settings](${context.payload.repository.html_url}/security)
+
+### Artifacts
+- NPM Audit Report
+- Snyk Report
+- GitLeaks Report
+- CodeQL Analysis
+- Outdated Dependencies
+
+### Next Steps
+1. Review any vulnerabilities found
+2. Update dependencies if necessary
+3. Address code quality issues identified by CodeQL`
+            });
+
+      - name: Notify Slack on critical findings
+        if: failure()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "Security scan detected issues",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Security Scan Alert*\nRepository: <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}>\nCheck <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|workflow results>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_SECURITY }}

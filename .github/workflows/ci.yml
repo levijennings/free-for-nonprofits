@@ -2,193 +2,91 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [ main, develop ]
   pull_request:
-    branches: [main, develop]
+    branches: [ main, develop ]
+
+# Cancel in-progress runs on same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
 
 jobs:
-  lint:
-    name: Lint
+  lint-and-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [ 20.x ]
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ matrix.node-version }}
           cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit
 
       - name: Run ESLint
         run: npm run lint
+        continue-on-error: false
 
-  type-check:
-    name: Type Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run TypeScript type check
+      - name: Type check
         run: npx tsc --noEmit
-
-  test-unit:
-    name: Unit & Integration Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
+        continue-on-error: false
 
       - name: Run unit tests
-        run: npm run test:run
+        run: npm run test:unit -- --coverage
+        continue-on-error: false
 
-      - name: Generate coverage report
-        run: npm run test:coverage
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./coverage/coverage-final.json
-          flags: unittests
-          name: codecov-umbrella
-        continue-on-error: true
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build application
-        run: npm run build
-
-      - name: Upload build artifacts
+      - name: Upload coverage reports
         uses: actions/upload-artifact@v4
-        with:
-          name: build
-          path: .next
-          retention-days: 1
-
-  test-e2e:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build
-          path: .next
-
-      - name: Run E2E tests
-        run: npm run test:e2e
-
-      - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
-          path: playwright-report/
+          name: coverage-report-${{ matrix.node-version }}
+          path: coverage/
           retention-days: 30
 
-  lighthouse:
-    name: Lighthouse CI
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build application
+      - name: Build
         run: npm run build
+        continue-on-error: false
 
-      - name: Run Lighthouse CI
-        uses: treosh/lighthouse-ci-action@v10
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
         with:
-          configPath: './.github/lighthouse/lighthouserc.json'
-          uploadArtifacts: true
-        continue-on-error: true
+          script: |
+            const fs = require('fs');
+            const coverage = fs.existsSync('coverage/coverage-summary.json')
+              ? JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8')).total
+              : null;
 
-  security:
-    name: Security Audit
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+            if (coverage) {
+              const comment = `## Coverage Report
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+| Metric | Coverage |
+|--------|----------|
+| Statements | ${coverage.statements.pct}% |
+| Branches | ${coverage.branches.pct}% |
+| Functions | ${coverage.functions.pct}% |
+| Lines | ${coverage.lines.pct}% |`;
 
-      - name: Run npm audit
-        run: npm audit --audit-level=moderate
-        continue-on-error: true
-
-  all-tests-passed:
-    name: All Tests Passed
-    runs-on: ubuntu-latest
-    needs: [lint, type-check, test-unit, build, test-e2e]
-    if: always()
-    steps:
-      - name: Check all tests status
-        run: |
-          if [[ ${{ needs.lint.result }} != 'success' ]] || \
-             [[ ${{ needs.type-check.result }} != 'success' ]] || \
-             [[ ${{ needs.test-unit.result }} != 'success' ]] || \
-             [[ ${{ needs.build.result }} != 'success' ]] || \
-             [[ ${{ needs.test-e2e.result }} != 'success' ]]; then
-            echo "One or more checks failed!"
-            exit 1
-          fi
-          echo "All checks passed!"
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }

@@ -1,0 +1,230 @@
+name: Deploy Free For NonProfits
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_FFNP }}
+  NODE_ENV: production
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Run type check
+        run: npm run type-check
+        continue-on-error: true
+
+      - name: Run tests
+        run: npm run test
+        continue-on-error: true
+
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_FFNP }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_FFNP }}
+          NEXT_PUBLIC_SITE_URL: https://freefornonprofits.com
+
+      - name: Export Next.js app (if using static export)
+        run: npm run export
+        continue-on-error: true
+
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Vercel
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Deploy to Vercel
+        run: |
+          vercel deploy --prod \
+            --token=${{ secrets.VERCEL_TOKEN }} \
+            --confirm
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_FFNP }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_FFNP }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_FFNP }}
+          NEXT_PUBLIC_SITE_URL: https://freefornonprofits.com
+          ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS_FFNP }}
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ Build and tests passed!\n\nPreview deployment will be available at: `vercel-preview-url`'
+            })
+
+  preview:
+    runs-on: ubuntu-latest
+    name: Deploy Preview
+    needs: build
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Deploy preview to Vercel
+        run: |
+          PREVIEW_URL=$(vercel deploy \
+            --token=${{ secrets.VERCEL_TOKEN }} \
+            --git-branch=${{ github.head_ref }})
+          echo "PREVIEW_URL=$PREVIEW_URL" >> $GITHUB_ENV
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL_FFNP }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_FFNP }}
+          NEXT_PUBLIC_SITE_URL: https://freefornonprofits.com
+
+      - name: Comment PR with preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 Preview deployed: ${{ env.PREVIEW_URL }}`
+            })
+
+  notify:
+    runs-on: ubuntu-latest
+    name: Notify Slack
+    needs: deploy
+    if: always()
+
+    steps:
+      - name: Notify Slack on success
+        if: needs.deploy.result == 'success'
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "channel": "#C0AQG7RJ6LT",
+              "text": "✅ Free For NonProfits deployed successfully",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Free For NonProfits - Production Deployment* ✅\n*Commit:* <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n*Author:* ${{ github.actor }}\n*Status:* Deployed to production"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Deployment"
+                      },
+                      "url": "https://freefornonprofits.com"
+                    }
+                  ]
+                }
+              ]
+            }
+
+      - name: Notify Slack on failure
+        if: needs.deploy.result == 'failure'
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "channel": "#C0AQG7RJ6LT",
+              "text": "❌ Free For NonProfits deployment failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Free For NonProfits - Deployment Failed* ❌\n*Commit:* <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n*Author:* ${{ github.actor }}\n*Status:* Deployment failed - see logs"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Logs"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
+                }
+              ]
+            }

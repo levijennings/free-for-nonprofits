@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { vi } from 'vitest'
 
 export function createMockSupabaseClient() {

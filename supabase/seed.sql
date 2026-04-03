@@ -26,7 +26,6 @@ INSERT INTO categories (name, slug, description, icon, display_order) VALUES
 -- 2. SEED SAMPLE TOOLS
 -- ============================================================================
 
--- Get category IDs for reference (these will be auto-assigned by the CTE)
 WITH category_ids AS (
   SELECT id, slug FROM categories
 )
@@ -53,7 +52,7 @@ INSERT INTO tools (
   cat.id,
   'https://www.salesforce.com/solutions/nonprofit/nonprofit-cloud/',
   'https://www.salesforce.com/content/dam/web/en_us/www/logos/salesforce-logo.svg',
-  'nonprofit_discount',
+  'nonprofit_discount'::pricing_model,
   '10 free licenses per year, up to 90% discount on additional licenses',
   '["Donor Management", "Volunteer Tracking", "Grants Management", "Reporting", "API Access", "Custom Fields"]'::jsonb,
   ARRAY['crm', 'nonprofit', 'donor', 'volunteer', 'enterprise'],
@@ -70,7 +69,7 @@ UNION ALL SELECT
   cat.id,
   'https://donorbox.org/',
   'https://assets.donorbox.org/images/donorbox-logo.png',
-  'freemium',
+  'freemium'::pricing_model,
   'Pay what you want pricing model - no minimum fees, transparent costs',
   '["Online Donations", "Recurring Giving", "Peer-to-Peer Fundraising", "Payment Processing", "Multi-Currency", "Reporting"]'::jsonb,
   ARRAY['fundraising', 'payments', 'donations', 'nonprofit', 'freemium'],
@@ -87,7 +86,7 @@ UNION ALL SELECT
   cat.id,
   'https://mailchimp.com/',
   'https://upload.wikimedia.org/wikipedia/commons/9/9e/Mailchimp_logo.svg',
-  'free',
+  'free'::pricing_model,
   'Free plan for nonprofits with unlimited contacts and basic features',
   '["Email Campaigns", "Marketing Automation", "Audience Segmentation", "Analytics", "A/B Testing", "Templates"]'::jsonb,
   ARRAY['email', 'marketing', 'automation', 'free', 'nonprofit'],
@@ -104,7 +103,7 @@ UNION ALL SELECT
   cat.id,
   'https://asana.com/',
   'https://luna.asana.biz/assets/img/logos/asana-logo-dark.svg',
-  'nonprofit_discount',
+  'nonprofit_discount'::pricing_model,
   '80% discount on Premium and Business plans for qualifying nonprofits',
   '["Task Management", "Timelines", "Portfolios", "Team Collaboration", "Custom Fields", "API Access"]'::jsonb,
   ARRAY['project-management', 'collaboration', 'nonprofit', 'teams'],
@@ -121,7 +120,7 @@ UNION ALL SELECT
   cat.id,
   'https://www.waveapps.com/',
   'https://www.waveapps.com/favicon-196.png',
-  'free',
+  'free'::pricing_model,
   'Completely free accounting and invoicing software for nonprofits',
   '["Invoicing", "Expense Tracking", "Accounting Reports", "Tax Preparation", "Multi-User Access", "Receipt Scanning"]'::jsonb,
   ARRAY['accounting', 'finance', 'free', 'nonprofit', 'invoicing'],
@@ -138,7 +137,7 @@ UNION ALL SELECT
   cat.id,
   'https://www.wix.com/en-us/nonprofits',
   'https://www.wix.com/favicon.ico',
-  'free',
+  'free'::pricing_model,
   'Free website, domain, and premium templates for eligible nonprofits',
   '["Website Builder", "Domain Name", "SSL Security", "Mobile Responsive", "Templates", "SEO Tools"]'::jsonb,
   ARRAY['website', 'cms', 'free', 'nonprofit', 'hosting'],
@@ -155,7 +154,7 @@ UNION ALL SELECT
   cat.id,
   'https://slack.com/',
   'https://a.slack-edge.com/80588/marketing/downloads/logos/downloads/Slack_Logo.png',
-  'freemium',
+  'freemium'::pricing_model,
   '50% discount on annual subscription for qualifying nonprofits',
   '["Team Messaging", "File Sharing", "App Integrations", "Search History", "Video Calls", "Channels"]'::jsonb,
   ARRAY['communication', 'chat', 'collaboration', 'nonprofit'],
@@ -172,7 +171,7 @@ UNION ALL SELECT
   cat.id,
   'https://www.canva.com/',
   'https://www.canva.com/favicon.ico',
-  'freemium',
+  'freemium'::pricing_model,
   'Free access to Canva Teams and premium features for nonprofits',
   '["Design Templates", "Photo Library", "Brand Kit", "Team Collaboration", "Export Options", "Social Media Tools"]'::jsonb,
   ARRAY['design', 'graphics', 'free', 'nonprofit', 'nonprofit-friendly'],
@@ -189,7 +188,7 @@ UNION ALL SELECT
   cat.id,
   'https://www.google.com/nonprofits/',
   'https://www.google.com/favicon.ico',
-  'free',
+  'free'::pricing_model,
   'Free Google Workspace account with up to 100 users for qualifying nonprofits',
   '["Email (Gmail)", "Docs", "Sheets", "Slides", "Drive", "Meet Video Conferencing"]'::jsonb,
   ARRAY['productivity', 'free', 'nonprofit', 'email', 'collaboration'],
@@ -206,7 +205,7 @@ UNION ALL SELECT
   cat.id,
   'https://www.microsoft.com/en-us/nonprofits/microsoft-365',
   'https://www.microsoft.com/favicon.ico',
-  'free',
+  'free'::pricing_model,
   'Free Microsoft 365 subscriptions for up to 300 office users',
   '["Word", "Excel", "PowerPoint", "Teams", "OneNote", "SharePoint"]'::jsonb,
   ARRAY['productivity', 'free', 'nonprofit', 'office'],
@@ -214,21 +213,3 @@ UNION ALL SELECT
   false,
   NOW()
 FROM category_ids cat WHERE cat.slug = 'document-management';
-
-
--- ============================================================================
--- 3. VERIFICATION NOTES
--- ============================================================================
-
--- All seeded tools are marked as verified=true and is_featured=true (for flagship tools)
--- These represent real, well-known nonprofit software solutions
--- The tools are production-ready examples demonstrating the full feature set
-
--- To run this seed file:
--- psql -U postgres -d postgres -c "\\c your_supabase_db" -f seed.sql
-
--- Or in Supabase dashboard:
--- 1. Go to SQL Editor
--- 2. Create new query
--- 3. Paste this seed.sql file
--- 4. Run the query

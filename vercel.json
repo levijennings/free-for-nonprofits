@@ -4,11 +4,6 @@
   "installCommand": "npm ci",
   "framework": "nextjs",
   "regions": ["iad1"],
-  "functions": {
-    "api/**": {
-      "memory": 1024
-    }
-  },
   "rewrites": [
     {
       "source": "/sitemap.xml",

@@ -70,8 +70,15 @@ export default function SignupPage() {
               <span className="text-white font-bold">FF</span>
             </div>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Create your account</h1>
-          <p className="mt-2 text-gray-500">Free for nonprofits. Always.</p>
+          <h1 className="text-3xl font-bold text-gray-900">Claim your free tools</h1>
+          <p className="mt-2 text-gray-500">Save programs, track your tech stack, get notified of new deals.</p>
+          <div className="mt-3 flex flex-col gap-1.5 text-sm text-left bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+            <p className="font-semibold text-green-800 mb-1">What you unlock:</p>
+            <p className="text-green-700">✅ Google Ad Grants — $10K/month in free advertising</p>
+            <p className="text-green-700">✅ Step-by-step claim guides for every tool</p>
+            <p className="text-green-700">✅ Save tools to your nonprofit&apos;s tech stack</p>
+            <p className="text-green-700">✅ New deal alerts as programs are added</p>
+          </div>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">

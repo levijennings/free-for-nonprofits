@@ -39,16 +39,17 @@ export default async function HomePage() {
       {/* Hero */}
       <section className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-          <div className="inline-flex items-center gap-2 bg-brand-50 text-brand-700 text-sm font-medium px-4 py-1.5 rounded-full mb-6">
-            🎉 {toolCount ?? '50'}+ free and discounted tools
+          <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-6 border border-green-200">
+            💰 Most nonprofits are leaving $50,000+/year on the table
           </div>
           <h1 className="text-5xl sm:text-6xl font-bold tracking-tight text-gray-900 max-w-3xl mx-auto leading-tight">
-            Free tools for{' '}
-            <span className="text-brand-500">nonprofits</span>
+            Free software your{' '}
+            <span className="text-brand-500">nonprofit</span>{' '}
+            already qualifies for
           </h1>
           <p className="mt-6 text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
-            Discover, compare, and save the best free and discounted software for your nonprofit.
-            Stop overpaying for tools your organization needs.
+            Google gives nonprofits $10,000/month in free ads. Salesforce gives you 10 free licenses.
+            Zendesk, Miro, Loom, and 50+ others are free or deeply discounted. Most nonprofit staff never find out.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
@@ -75,20 +76,20 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
             <div>
-              <p className="text-3xl font-bold text-gray-900">{toolCount ?? '50'}+</p>
-              <p className="text-sm text-gray-500 mt-1">Verified tools</p>
+              <p className="text-3xl font-bold text-green-600">$120K</p>
+              <p className="text-sm text-gray-500 mt-1">Google Ad Grants/year</p>
             </div>
             <div>
-              <p className="text-3xl font-bold text-gray-900">12</p>
-              <p className="text-sm text-gray-500 mt-1">Categories</p>
+              <p className="text-3xl font-bold text-green-600">$100K</p>
+              <p className="text-sm text-gray-500 mt-1">Zendesk value, free</p>
+            </div>
+            <div>
+              <p className="text-3xl font-bold text-gray-900">{toolCount ?? '70'}+</p>
+              <p className="text-sm text-gray-500 mt-1">Verified programs</p>
             </div>
             <div>
               <p className="text-3xl font-bold text-gray-900">$0</p>
-              <p className="text-sm text-gray-500 mt-1">To sign up</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold text-gray-900">100%</p>
-              <p className="text-sm text-gray-500 mt-1">For nonprofits</p>
+              <p className="text-sm text-gray-500 mt-1">To access everything</p>
             </div>
           </div>
         </div>

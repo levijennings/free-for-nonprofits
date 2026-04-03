@@ -9,25 +9,25 @@ export function createMockSupabaseClient() {
     from: vi.fn(function () {
       return this
     }),
-    insert: vi.fn(function (data: any) {
+    insert: vi.fn(function (_data: unknown) {
       return this
     }),
-    update: vi.fn(function (data: any) {
+    update: vi.fn(function (_data: unknown) {
       return this
     }),
     delete: vi.fn(function () {
       return this
     }),
-    eq: vi.fn(function (column: string, value: any) {
+    eq: vi.fn(function (_column: string, _value: unknown) {
       return this
     }),
-    order: vi.fn(function (column: string, options?: any) {
+    order: vi.fn(function (_column: string, _options?: unknown) {
       return this
     }),
-    range: vi.fn(function (from: number, to: number) {
+    range: vi.fn(function (_from: number, _to: number) {
       return this
     }),
-    limit: vi.fn(function (count: number) {
+    limit: vi.fn(function (_count: number) {
       return this
     }),
     single: vi.fn(async function () {
@@ -42,29 +42,29 @@ export function createMockSupabaseClient() {
   }
 
   return {
-    from: vi.fn((table: string) => ({ ...mockQueryBuilder })),
+    from: vi.fn((_table: string) => ({ ...mockQueryBuilder })),
     select: vi.fn(function () {
       return this
     }),
-    insert: vi.fn(function (data: any) {
+    insert: vi.fn(function (_data: unknown) {
       return this
     }),
-    update: vi.fn(function (data: any) {
+    update: vi.fn(function (_data: unknown) {
       return this
     }),
     delete: vi.fn(function () {
       return this
     }),
-    eq: vi.fn(function (column: string, value: any) {
+    eq: vi.fn(function (_column: string, _value: unknown) {
       return this
     }),
-    order: vi.fn(function (column: string, options?: any) {
+    order: vi.fn(function (_column: string, _options?: unknown) {
       return this
     }),
-    range: vi.fn(function (from: number, to: number) {
+    range: vi.fn(function (_from: number, _to: number) {
       return this
     }),
-    limit: vi.fn(function (count: number) {
+    limit: vi.fn(function (_count: number) {
       return this
     }),
     single: vi.fn(async function () {
@@ -103,16 +103,16 @@ export function createMockQueryBuilder() {
     select: vi.fn(function () {
       return this
     }),
-    eq: vi.fn(function (column: string, value: any) {
+    eq: vi.fn(function (_column: string, _value: unknown) {
       return this
     }),
-    order: vi.fn(function (column: string, options?: any) {
+    order: vi.fn(function (_column: string, _options?: unknown) {
       return this
     }),
-    range: vi.fn(function (from: number, to: number) {
+    range: vi.fn(function (_from: number, _to: number) {
       return this
     }),
-    limit: vi.fn(function (count: number) {
+    limit: vi.fn(function (_count: number) {
       return this
     }),
     single: vi.fn(async function () {

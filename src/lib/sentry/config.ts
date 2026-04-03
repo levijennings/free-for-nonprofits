@@ -1,18 +1,13 @@
 /**
- * Sentry Configuration - Base Setup
+ * Sentry Configuration - Base Setup (Stub Implementation)
  *
- * SETUP INSTRUCTIONS:
- * 1. Create Sentry projects for each product at sentry.io
- * 2. Install in each product: npm install @sentry/nextjs
- * 3. Set environment variables in each product's .env.local:
- *    - NEXT_PUBLIC_SENTRY_DSN_FFN=https://your-key@your-org.ingest.sentry.io/project-id
- *    - NEXT_PUBLIC_SENTRY_DSN_BB=https://your-key@your-org.ingest.sentry.io/project-id
- *    - NEXT_PUBLIC_SENTRY_DSN_CD=https://your-key@your-org.ingest.sentry.io/project-id
- *    - NEXT_PUBLIC_SENTRY_DSN_PB=https://your-key@your-org.ingest.sentry.io/project-id
- *    - NEXT_PUBLIC_ENV=development|staging|production
+ * This is a stub implementation that provides the same interface as Sentry
+ * but doesn't require the @sentry/nextjs package.
+ *
+ * To enable Sentry in production:
+ * 1. npm install @sentry/nextjs
+ * 2. Replace this file with the real Sentry config
  */
-
-import * as Sentry from '@sentry/nextjs';
 
 export interface SentryInitConfig {
   dsn: string;
@@ -21,8 +16,8 @@ export interface SentryInitConfig {
   tracesSampleRate: number;
   profilesSampleRate: number;
   ignoreErrors: string[];
-  beforeSend?: (event: Sentry.Event, hint: Sentry.EventHint) => Sentry.Event | null;
-  integrations?: Array<Sentry.Integration | (() => Sentry.Integration)>;
+  beforeSend?: (event: any, hint: any) => any | null;
+  integrations?: any[];
 }
 
 /**
@@ -97,19 +92,12 @@ export const getSentryConfig = (
       return event;
     },
 
-    integrations: [
-      // Sentry integrations
-      new Sentry.Replay({
-        maskAllText: true,
-        blockAllMedia: true,
-        maskAllInputs: true,
-      }),
-    ],
+    integrations: [],
   };
 };
 
 /**
- * Initialize Sentry for a Next.js app
+ * Initialize Sentry for a Next.js app (Stub Implementation)
  * Call this in your app.tsx or layout.tsx
  */
 export const initializeSentry = (config: SentryInitConfig) => {
@@ -120,15 +108,9 @@ export const initializeSentry = (config: SentryInitConfig) => {
     return;
   }
 
-  Sentry.init({
-    ...config,
-    // Session replay
-    replaysSessionSampleRate: config.environment === 'production' ? 0.1 : 1.0,
-    replaysOnErrorSampleRate: 1.0,
-  });
-
+  // Stub implementation - does nothing
   console.log(
-    `[Sentry] Initialized for ${config.environment} with release ${config.release}`
+    `[Sentry] Stub initialized for ${config.environment} with release ${config.release}`
   );
 };
 
@@ -198,14 +180,14 @@ const shouldIgnoreError = (message: string): boolean => {
 };
 
 /**
- * Sentry Hub for server-side error tracking
+ * Sentry Hub for server-side error tracking (Stub)
  */
 export const getSentryHub = () => {
-  return Sentry.getActiveScope();
+  return null;
 };
 
 /**
- * Create breadcrumb for tracking user actions
+ * Create breadcrumb for tracking user actions (Stub)
  */
 export const createBreadcrumb = (
   category: string,
@@ -213,60 +195,43 @@ export const createBreadcrumb = (
   level: 'debug' | 'info' | 'warning' | 'error' | 'fatal' = 'info',
   data?: Record<string, any>
 ) => {
-  Sentry.captureMessage(message, level);
-
-  Sentry.addBreadcrumb({
-    category,
-    message,
-    level,
-    data,
-    timestamp: Date.now() / 1000,
-  });
+  // Stub implementation
 };
 
 /**
- * Explicitly capture an exception
+ * Explicitly capture an exception (Stub)
  */
 export const captureException = (
   error: Error | string,
   context?: Record<string, any>
 ) => {
-  if (context) {
-    Sentry.captureException(error, {
-      contexts: {
-        custom: context,
-      },
-    });
-  } else {
-    Sentry.captureException(error);
+  // Stub implementation
+  if (process.env.NODE_ENV === 'development') {
+    console.error('Error:', error, context);
   }
 };
 
 /**
- * Set user context
+ * Set user context (Stub)
  */
 export const setSentryUser = (
   userId: string,
   email?: string,
   username?: string
 ) => {
-  Sentry.setUser({
-    id: userId,
-    email,
-    username,
-  });
+  // Stub implementation
 };
 
 /**
- * Clear user context on logout
+ * Clear user context on logout (Stub)
  */
 export const clearSentryUser = () => {
-  Sentry.setUser(null);
+  // Stub implementation
 };
 
 /**
- * Set custom context
+ * Set custom context (Stub)
  */
 export const setSentryContext = (key: string, value: Record<string, any>) => {
-  Sentry.setContext(key, value);
+  // Stub implementation
 };

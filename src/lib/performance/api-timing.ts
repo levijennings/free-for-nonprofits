@@ -13,7 +13,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import * as Sentry from '@sentry/nextjs';
 import { trackEvent } from '@/lib/analytics/provider';
 
 export interface ApiTimingConfig {
@@ -121,10 +120,9 @@ const logApiTiming = (options: {
     console.log(logMessage);
   }
 
-  // Send to Sentry if slow
-  if (isSlow) {
-    Sentry.captureMessage(logMessage, 'warning');
-    Sentry.setContext('api_timing', {
+  // Log slow requests
+  if (isSlow && process.env.NODE_ENV === 'development') {
+    console.warn('API timing context:', {
       method,
       pathname,
       duration: parseFloat(duration.toFixed(2)),
@@ -143,11 +141,10 @@ const logApiTiming = (options: {
     error_message: error?.message,
   });
 
-  // Send alert if very slow (>5 seconds)
+  // Log alert if very slow (>5 seconds)
   if (duration > 5000) {
-    Sentry.captureMessage(
-      `Very slow API: ${method} ${pathname} took ${duration.toFixed(2)}ms`,
-      'error'
+    console.error(
+      `Very slow API: ${method} ${pathname} took ${duration.toFixed(2)}ms`
     );
   }
 };
@@ -194,11 +191,6 @@ export const trackDatabaseQuery = async <T,>(
       // Log slow queries
       console.warn(`[DB] Slow query: ${queryName} - ${duration.toFixed(2)}ms`);
 
-      Sentry.captureMessage(
-        `Slow database query: ${queryName} took ${duration.toFixed(2)}ms`,
-        'warning'
-      );
-
       trackEvent('slow_database_query', {
         query_name: queryName,
         duration: parseFloat(duration.toFixed(2)),
@@ -210,12 +202,7 @@ export const trackDatabaseQuery = async <T,>(
     const duration = performance.now() - startTime;
     const err = error instanceof Error ? error : new Error(String(error));
 
-    Sentry.captureException(err, {
-      tags: {
-        database_query: queryName,
-        duration: parseFloat(duration.toFixed(2)),
-      },
-    });
+    console.error(`[DB] Query failed: ${queryName} - ${err.message}`);
 
     throw err;
   }
@@ -260,13 +247,9 @@ export const trackExternalApiCall = async <T,>(
     const duration = performance.now() - startTime;
     const err = error instanceof Error ? error : new Error(String(error));
 
-    Sentry.captureException(err, {
-      tags: {
-        external_service: serviceName,
-        endpoint,
-        duration: parseFloat(duration.toFixed(2)),
-      },
-    });
+    console.error(
+      `[EXTERNAL] Call to ${serviceName} failed: ${err.message}`
+    );
 
     trackEvent('external_api_call', {
       service: serviceName,

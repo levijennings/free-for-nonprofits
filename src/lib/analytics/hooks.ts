@@ -42,9 +42,6 @@ export const AnalyticsProvider = ({
 
 /**
  * Main hook for tracking events
- * @example
- * const { track } = useAnalytics();
- * track('button_clicked', { button_name: 'Submit' });
  */
 export const useAnalytics = () => {
   const provider = useContext(AnalyticsContext);
@@ -58,12 +55,7 @@ export const useAnalytics = () => {
   const analytics = provider || new NoOpAnalytics();
 
   const track = useCallback(
-    <T extends EventName>(
-      eventName: T,
-      properties: T extends keyof AllAnalyticsEvents
-        ? AllAnalyticsEvents[T]
-        : never
-    ) => {
+    (eventName: string, properties?: any) => {
       analytics.track(eventName, properties);
     },
     [analytics]
@@ -113,8 +105,6 @@ export const useAnalytics = () => {
 
 /**
  * Hook to track page views automatically
- * @example
- * usePageView('/products', 'Products Page');
  */
 export const usePageView = (path: string, title?: string) => {
   const { pageView } = useAnalytics();
@@ -126,8 +116,6 @@ export const usePageView = (path: string, title?: string) => {
 
 /**
  * Hook to track user signup
- * @example
- * useTrackSignup('user@example.com', 'oauth');
  */
 export const useTrackSignup = (
   email: string,
@@ -146,8 +134,6 @@ export const useTrackSignup = (
 
 /**
  * Hook to track when user identifies (logs in)
- * @example
- * useIdentifyUser('user-123', { email: 'user@example.com', plan: 'pro' });
  */
 export const useIdentifyUser = (
   userId: string,
@@ -162,8 +148,6 @@ export const useIdentifyUser = (
 
 /**
  * Hook to track errors that occur in components
- * @example
- * useErrorTracking();
  */
 export const useErrorTracking = () => {
   const { track } = useAnalytics();
@@ -202,8 +186,6 @@ export const useErrorTracking = () => {
 
 /**
  * Hook for feature flag checking
- * @example
- * const isNewUIEnabled = useFeatureFlag('new_ui');
  */
 export const useFeatureFlag = (featureName: string): boolean => {
   const { isFeatureEnabled } = useAnalytics();
@@ -212,9 +194,6 @@ export const useFeatureFlag = (featureName: string): boolean => {
 
 /**
  * Hook to track element visibility (intersection observer)
- * @example
- * const ref = useTrackVisibility('hero_section');
- * return <div ref={ref}>...</div>;
  */
 export const useTrackVisibility = (elementName: string) => {
   const { track } = useAnalytics();
@@ -242,8 +221,6 @@ export const useTrackVisibility = (elementName: string) => {
 
 /**
  * Hook for tracking time spent on page
- * @example
- * useTrackTimeOnPage('product_page', () => console.log('User spent X seconds'));
  */
 export const useTrackTimeOnPage = (
   pageName: string,

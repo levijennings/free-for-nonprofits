@@ -22,7 +22,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { withSentryErrorHandler } from '@/lib/sentry/api-handler';
-import * as Sentry from '@sentry/nextjs';
 
 interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -181,9 +180,9 @@ async function checkDatabase(): Promise<{
       responseTime: Date.now() - startTime,
     };
   } catch (error) {
-    Sentry.captureException(error, {
-      tags: { health_check: 'database' },
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Database health check failed:', error);
+    }
 
     return {
       status: 'down',
@@ -220,9 +219,9 @@ async function checkCache(): Promise<{
       responseTime: Date.now() - startTime,
     };
   } catch (error) {
-    Sentry.captureException(error, {
-      tags: { health_check: 'cache' },
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Cache health check failed:', error);
+    }
 
     return {
       status: 'down',
@@ -256,9 +255,9 @@ async function checkStripe(): Promise<{
       responseTime: Date.now() - startTime,
     };
   } catch (error) {
-    Sentry.captureException(error, {
-      tags: { health_check: 'stripe' },
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Stripe health check failed:', error);
+    }
 
     return {
       status: 'down',

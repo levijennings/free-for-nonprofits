@@ -11,7 +11,6 @@
 
 import { getCLS, getFID, getFCP, getLCP, getTTFB, getINP } from 'web-vitals';
 import { trackEvent } from '@/lib/analytics/provider';
-import * as Sentry from '@sentry/nextjs';
 
 export interface WebVitalsMetrics {
   name: string; // LCP, FID, CLS, etc.
@@ -76,19 +75,11 @@ const handleWebVital = (metric: WebVitalsMetrics) => {
       effective_type: getEffectiveType(),
     });
 
-    // Track to Sentry
-    if (!isGood) {
-      Sentry.captureMessage(
-        `Poor Web Vital: ${metric.name} = ${metric.value.toFixed(2)}ms`,
-        'warning'
+    // Track poor metrics in development
+    if (!isGood && process.env.NODE_ENV === 'development') {
+      console.warn(
+        `Poor Web Vital: ${metric.name} = ${metric.value.toFixed(2)}ms`
       );
-      Sentry.setContext('web_vital', {
-        metric: metric.name,
-        value: metric.value,
-        delta: metric.delta,
-        rating: metric.rating,
-        threshold,
-      });
     }
   }
 };
@@ -187,7 +178,7 @@ const trackNavigationTiming = (entry: any) => {
  */
 const trackResourceTiming = (entry: any) => {
   // Only track slow resources (>1s)
-  const duration = entry.responseEnd - entry startTime;
+  const duration = entry.responseEnd - entry.startTime;
   if (duration > 1000) {
     trackEvent('slow_resource', {
       url: entry.name,

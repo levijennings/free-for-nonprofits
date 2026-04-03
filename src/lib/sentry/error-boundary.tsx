@@ -11,7 +11,6 @@
 'use client';
 
 import React, { ReactNode, ReactElement } from 'react';
-import * as Sentry from '@sentry/nextjs';
 import { captureException } from './config';
 
 interface ErrorBoundaryProps {

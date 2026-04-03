@@ -1,5 +1,5 @@
 /**
- * API Handler Wrapper with Sentry Integration
+ * API Handler Wrapper with Sentry Integration (Stub Implementation)
  * Automatically captures errors from API routes and logs performance metrics
  *
  * USAGE:
@@ -10,7 +10,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import * as Sentry from '@sentry/nextjs';
 import { captureException, createBreadcrumb } from './config';
 
 export interface ApiMetrics {
@@ -157,23 +156,17 @@ export const apiMetricsMiddleware = (
 };
 
 /**
- * Record API metrics to Sentry
+ * Record API metrics to Sentry (Stub)
  */
 const recordApiMetrics = (metrics: ApiMetrics) => {
   // Only record slow requests in production
   const isDevelopment = process.env.NODE_ENV === 'development';
   const slowThreshold = isDevelopment ? 2000 : 1000; // ms
 
-  if (metrics.duration > slowThreshold) {
-    Sentry.captureMessage(
-      `Slow API request: ${metrics.method} ${metrics.path} (${metrics.duration}ms)`,
-      'warning'
+  if (metrics.duration > slowThreshold && isDevelopment) {
+    console.warn(
+      `Slow API request: ${metrics.method} ${metrics.path} (${metrics.duration}ms)`
     );
-  }
-
-  // Record in Sentry transaction
-  if (Sentry.getActiveSpan()) {
-    Sentry.getActiveSpan()?.setData('api.metrics', metrics);
   }
 };
 
@@ -274,13 +267,12 @@ export const extractUserFromRequest = (req: NextRequest): string | undefined => 
 };
 
 /**
- * Set user context from request
+ * Set user context from request (Stub)
  */
 export const setSentryUserFromRequest = (req: NextRequest) => {
+  // Stub implementation
   const userId = extractUserFromRequest(req);
-  if (userId) {
-    Sentry.setUser({
-      id: userId,
-    });
+  if (userId && process.env.NODE_ENV === 'development') {
+    console.log('User context:', userId);
   }
 };

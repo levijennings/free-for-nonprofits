@@ -41,11 +41,15 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">FF</span>
+          <Link href="/" className="flex items-center gap-2.5 shrink-0">
+            <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-brand-700 rounded-lg flex items-center justify-center shadow-sm">
+              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+              </svg>
             </div>
-            <span className="font-bold text-gray-900 hidden sm:block">Free For NonProfits</span>
+            <span className="font-extrabold text-gray-900 hidden sm:block tracking-tight">
+              Free For <span className="text-brand-600">NonProfits</span>
+            </span>
           </Link>
 
           {/* Search */}
@@ -59,7 +63,7 @@ export default function Header() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search tools, categories..."
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50"
+                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent bg-gray-50"
               />
             </div>
           </form>
@@ -79,7 +83,7 @@ export default function Header() {
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="px-4 py-2 text-sm font-medium text-white bg-brand-500 hover:bg-brand-700 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors"
                 >
                   Sign out
                 </button>
@@ -89,7 +93,7 @@ export default function Header() {
                 <Link href="/login" className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
                   Sign in
                 </Link>
-                <Link href="/signup" className="px-4 py-2 text-sm font-medium text-white bg-brand-500 hover:bg-brand-700 rounded-lg transition-colors">
+                <Link href="/signup" className="px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors">
                   Get started
                 </Link>
               </div>
@@ -123,7 +127,7 @@ export default function Header() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search tools..."
-                  className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-400"
                 />
               </div>
             </form>
@@ -137,7 +141,7 @@ export default function Header() {
             ) : (
               <>
                 <Link href="/login" className="block px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg" onClick={() => setMenuOpen(false)}>Sign in</Link>
-                <Link href="/signup" className="block px-3 py-2 text-sm font-medium text-white bg-brand-500 rounded-lg text-center" onClick={() => setMenuOpen(false)}>Get started free</Link>
+                <Link href="/signup" className="block px-3 py-2 text-sm font-medium text-white bg-brand-600 rounded-lg text-center" onClick={() => setMenuOpen(false)}>Get started free</Link>
               </>
             )}
           </div>

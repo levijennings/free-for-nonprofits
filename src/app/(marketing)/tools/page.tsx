@@ -21,7 +21,7 @@ const pricingLabels: Record<string, string> = {
 }
 
 const pricingColors: Record<string, string> = {
-  free: 'bg-green-100 text-green-800',
+  free: 'bg-emerald-100 text-emerald-800',
   freemium: 'bg-blue-100 text-blue-800',
   nonprofit_discount: 'bg-purple-100 text-purple-800',
 }
@@ -170,7 +170,7 @@ export default async function ToolsPage({
                   <Link
                     key={tool.id}
                     href={`/tools/${tool.slug}`}
-                    className="group bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md hover:border-brand-200 transition-all flex flex-col gap-3"
+                    className="group bg-gray-50 rounded-2xl border border-gray-100 p-5 hover:shadow-lg hover:border-brand-200 hover:-translate-y-0.5 transition-all flex flex-col gap-3"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-3 min-w-0">
@@ -181,8 +181,8 @@ export default async function ToolsPage({
                             className="w-10 h-10 rounded-xl object-contain border border-gray-100 p-1 bg-white shrink-0"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
-                            <span className="text-brand-500 font-bold text-sm">{tool.name[0]}</span>
+                          <div className="w-10 h-10 rounded-xl bg-brand-100 flex items-center justify-center shrink-0">
+                            <span className="text-brand-700 font-bold text-sm">{tool.name[0]}</span>
                           </div>
                         )}
                         <h2 className="font-semibold text-gray-900 group-hover:text-brand-600 transition-colors leading-tight">{tool.name}</h2>
@@ -195,7 +195,7 @@ export default async function ToolsPage({
                     <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">{tool.description}</p>
 
                     {tool.nonprofit_deal && (
-                      <div className="text-xs text-green-700 bg-green-50 rounded-lg px-2.5 py-1.5 line-clamp-1">
+                      <div className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-2.5 py-1.5 line-clamp-1">
                         🎁 {tool.nonprofit_deal}
                       </div>
                     )}
@@ -204,9 +204,9 @@ export default async function ToolsPage({
                       {tool.review_count > 0 ? (
                         <span className="text-xs text-gray-400">⭐ {Number(tool.rating_avg).toFixed(1)} · {tool.review_count} reviews</span>
                       ) : (
-                        <span className="text-xs text-gray-300">No reviews yet</span>
+                        <span />
                       )}
-                      <span className="text-xs font-medium text-brand-500 group-hover:translate-x-0.5 transition-transform">
+                      <span className="text-xs font-semibold text-brand-600 group-hover:translate-x-0.5 transition-transform">
                         Learn more →
                       </span>
                     </div>

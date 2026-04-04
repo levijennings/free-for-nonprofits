@@ -42,12 +42,16 @@ export default function SaveToolButton({ toolId, toolName }: Props) {
 
     setLoading(true)
     const method = saved ? 'DELETE' : 'POST'
-    await fetch('/api/saved-tools', {
+    const res = await fetch('/api/saved-tools', {
       method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tool_id: toolId }),
     })
-    setSaved(!saved)
+    if (res.ok || res.status === 400) {
+      // 400 means already saved — treat as saved
+      setSaved(method === 'POST' ? true : false)
+    }
+    router.refresh()
     setLoading(false)
   }
 

@@ -1,22 +1,9 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-interface CookieToSet {
-  name: string
-  value: string
-  options?: {
-    path?: string
-    domain?: string
-    maxAge?: number
-    httpOnly?: boolean
-    secure?: boolean
-    sameSite?: boolean | 'lax' | 'strict' | 'none'
-  }
-}
-
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
+  let response = NextResponse.next({
+    request: { headers: request.headers },
   })
 
   const supabase = createServerClient(
@@ -24,17 +11,22 @@ export async function updateSession(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
+        get(name: string) {
+          return request.cookies.get(name)?.value
         },
-        setAll(cookiesToSet: CookieToSet[]) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
+        set(name: string, value: string, options: CookieOptions) {
+          request.cookies.set({ name, value, ...options } as Parameters<typeof request.cookies.set>[0])
+          response = NextResponse.next({
+            request: { headers: request.headers },
           })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+          response.cookies.set({ name, value, ...options } as Parameters<typeof response.cookies.set>[0])
+        },
+        remove(name: string, options: CookieOptions) {
+          request.cookies.set({ name, value: '', ...options } as Parameters<typeof request.cookies.set>[0])
+          response = NextResponse.next({
+            request: { headers: request.headers },
+          })
+          response.cookies.set({ name, value: '', ...options } as Parameters<typeof response.cookies.set>[0])
         },
       },
     }
@@ -42,5 +34,5 @@ export async function updateSession(request: NextRequest) {
 
   await supabase.auth.getUser()
 
-  return supabaseResponse
+  return response
 }

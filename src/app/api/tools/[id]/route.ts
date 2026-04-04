@@ -32,6 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         name,
         description,
         website_url,
+        affiliate_url,
         logo_url,
         category:categories(id, name, slug),
         pricing_model,
@@ -88,7 +89,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const body = await request.json()
 
     // Allow updating specific fields only
-    const allowedFields = ['name', 'description', 'website_url', 'logo_url', 'nonprofit_deal', 'features', 'status']
+    const allowedFields = ['name', 'description', 'website_url', 'affiliate_url', 'logo_url', 'nonprofit_deal', 'features', 'status']
     const updateData: Record<string, any> = {}
 
     for (const field of allowedFields) {

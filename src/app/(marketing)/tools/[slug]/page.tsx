@@ -4,6 +4,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import SaveToolButton from '@/components/tools/SaveToolButton'
 import ToolLogo from '@/components/tools/ToolLogo'
+import AffiliateLink from '@/components/tools/AffiliateLink'
 
 interface Props {
   params: { slug: string }
@@ -220,18 +221,12 @@ export default async function ToolDetailPage({ params }: Props) {
                 </div>
               )}
 
-              <a
-                href={tool.website_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full py-3 text-center bg-brand-500 hover:bg-brand-700 text-white font-semibold rounded-xl transition-colors"
-              >
-                Visit {tool.name} →
-              </a>
-
-              <p className="mt-3 text-center text-xs text-gray-400">
-                Opens official website
-              </p>
+              <AffiliateLink
+                toolId={tool.id}
+                toolName={tool.name}
+                websiteUrl={tool.website_url}
+                affiliateUrl={tool.affiliate_url}
+              />
 
               <SaveToolButton toolId={tool.id} toolName={tool.name} />
             </div>

@@ -4,6 +4,7 @@ export interface Tool {
   description: string
   category: string
   website_url: string
+  affiliate_url?: string
   logo_url?: string
   pricing_model: 'free' | 'freemium' | 'nonprofit_discount'
   nonprofit_deal?: string

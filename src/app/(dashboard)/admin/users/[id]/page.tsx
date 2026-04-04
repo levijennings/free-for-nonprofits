@@ -46,9 +46,9 @@ function StarRow({ rating }: { rating: number }) {
 
 function StatCard({ label, value, color = 'text-gray-900' }: { label: string; value: string | number; color?: string }) {
   return (
-    <div className="bg-gray-50 rounded-xl p-4 text-center">
-      <p className={`text-2xl font-bold ${color}`}>{value}</p>
-      <p className="text-xs text-gray-400 mt-1">{label}</p>
+    <div className="bg-gray-50 rounded-xl px-3 py-3 text-center">
+      <p className={`text-xl font-bold ${color}`}>{value}</p>
+      <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">{label}</p>
     </div>
   )
 }
@@ -155,27 +155,29 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
                 {profile.org_name && profile.display_name && (
                   <p className="text-sm text-gray-500">{profile.display_name}</p>
                 )}
-                <div className="flex items-center gap-4 mt-2 flex-wrap text-xs text-gray-400">
+                <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-gray-400 divide-x divide-gray-100">
                   {profile.org_size && (
-                    <span>🏢 {orgSizeLabels[profile.org_size] ?? profile.org_size}</span>
+                    <span className="pr-3">{orgSizeLabels[profile.org_size] ?? profile.org_size}</span>
                   )}
-                  <span>📅 Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-                  <span>⏱ {daysActive === 0 ? 'Joined today' : `Member for ${daysActive}d`}</span>
+                  <span className={profile.org_size ? 'pl-3 pr-3' : 'pr-3'}>
+                    Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
+                  <span className="pl-3">
+                    {daysActive === 0 ? 'Day 1' : `${daysActive}d member`}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Activity stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            <StatCard label="Tools saved"    value={saveCount ?? 0}   color="text-blue-600"   />
-            <StatCard label="Favorites"      value={favCount ?? 0}    color="text-rose-500"   />
-            <StatCard label="Using"          value={usingCount ?? 0}  color="text-teal-600"   />
-            <StatCard label="Reviews"        value={reviewCount ?? 0} color="text-amber-500"  />
-          </div>
-          <div className="grid grid-cols-2 gap-3 mb-8">
-            <StatCard label="Engagement score"  value={engagementScore} color="text-gray-700" />
-            <StatCard label="Submissions"       value={submissions?.length ?? 0} color="text-purple-600" />
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-6">
+            <StatCard label="Saved"      value={saveCount ?? 0}              color="text-blue-600"   />
+            <StatCard label="Favorites"  value={favCount ?? 0}               color="text-rose-500"   />
+            <StatCard label="Using"      value={usingCount ?? 0}             color="text-teal-600"   />
+            <StatCard label="Reviews"    value={reviewCount ?? 0}            color="text-amber-500"  />
+            <StatCard label="Score"      value={engagementScore}             color="text-gray-700"   />
+            <StatCard label="Submitted"  value={submissions?.length ?? 0}    color="text-purple-600" />
           </div>
 
           {/* Saved tools */}

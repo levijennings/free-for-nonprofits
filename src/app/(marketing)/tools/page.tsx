@@ -195,7 +195,7 @@ export default async function ToolsPage({
                     <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">{tool.description}</p>
 
                     {tool.nonprofit_deal && (
-                      <div className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-2.5 py-1.5 line-clamp-1">
+                      <div className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-2.5 py-1.5 line-clamp-2 leading-relaxed">
                         🎁 {tool.nonprofit_deal}
                       </div>
                     )}

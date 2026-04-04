@@ -5,6 +5,8 @@ import type { Metadata } from 'next'
 import SaveToolButton from '@/components/tools/SaveToolButton'
 import ToolLogo from '@/components/tools/ToolLogo'
 import AffiliateLink from '@/components/tools/AffiliateLink'
+import ReviewForm from '@/components/reviews/ReviewForm'
+import ReviewsList from '@/components/reviews/ReviewsList'
 
 interface Props {
   params: { slug: string }
@@ -33,7 +35,7 @@ const pricingLabels: Record<string, string> = {
 }
 
 const pricingColors: Record<string, string> = {
-  free: 'bg-green-100 text-green-800',
+  free: 'bg-emerald-100 text-emerald-800',
   freemium: 'bg-blue-100 text-blue-800',
   nonprofit_discount: 'bg-purple-100 text-purple-800',
 }
@@ -49,10 +51,7 @@ export default async function ToolDetailPage({ params }: Props) {
 
   const { data: tool } = await supabase
     .from('tools')
-    .select(`
-      *,
-      category:categories(name, slug, icon)
-    `)
+    .select(`*, category:categories(name, slug, icon)`)
     .eq('slug', params.slug)
     .single()
 
@@ -61,14 +60,27 @@ export default async function ToolDetailPage({ params }: Props) {
   const features = Array.isArray(tool.features) ? tool.features : []
   const tags = Array.isArray(tool.tags) ? tool.tags : []
 
-  // Fetch related tools in same category
-  const { data: relatedTools } = await supabase
-    .from('tools')
-    .select('id, name, slug, description, pricing_model, logo_url')
-    .eq('category_id', tool.category_id)
-    .eq('is_verified', true)
-    .neq('id', tool.id)
-    .limit(3)
+  // Fetch related tools and reviews in parallel
+  const [{ data: relatedTools }, { data: reviews }] = await Promise.all([
+    supabase
+      .from('tools')
+      .select('id, name, slug, description, pricing_model, logo_url')
+      .eq('category_id', tool.category_id)
+      .eq('is_verified', true)
+      .neq('id', tool.id)
+      .limit(3),
+    supabase
+      .from('reviews')
+      .select('id, rating, comment, created_at, user_id')
+      .eq('tool_id', tool.id)
+      .order('created_at', { ascending: false })
+      .limit(50),
+  ])
+
+  const reviewList = reviews ?? []
+  const avgRating = reviewList.length
+    ? reviewList.reduce((sum, r) => sum + r.rating, 0) / reviewList.length
+    : null
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -125,9 +137,19 @@ export default async function ToolDetailPage({ params }: Props) {
                       {tool.category.icon} {tool.category.name}
                     </Link>
                   )}
-                  {tool.review_count > 0 && (
-                    <div className="mt-1 text-sm text-gray-400">
-                      ⭐ {Number(tool.rating_avg).toFixed(1)} · {tool.review_count} review{tool.review_count !== 1 ? 's' : ''}
+                  {/* Live rating from reviews */}
+                  {reviewList.length > 0 && (
+                    <div className="mt-1.5 flex items-center gap-1.5">
+                      <div className="flex gap-0.5">
+                        {[1,2,3,4,5].map(s => (
+                          <svg key={s} className={`w-4 h-4 ${s <= Math.round(avgRating!) ? 'text-amber-400' : 'text-gray-200'}`} fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ))}
+                      </div>
+                      <span className="text-sm text-gray-500">
+                        {avgRating!.toFixed(1)} · {reviewList.length} review{reviewList.length !== 1 ? 's' : ''}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -159,7 +181,7 @@ export default async function ToolDetailPage({ params }: Props) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {features.map((feature: string) => (
                     <div key={feature} className="flex items-start gap-2.5">
-                      <svg className="w-4 h-4 text-green-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-brand-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                       <span className="text-sm text-gray-700">{feature}</span>
@@ -168,6 +190,28 @@ export default async function ToolDetailPage({ params }: Props) {
                 </div>
               </div>
             )}
+
+            {/* Reviews */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-1">
+                Reviews
+                {reviewList.length > 0 && (
+                  <span className="ml-2 text-sm font-normal text-gray-400">({reviewList.length})</span>
+                )}
+              </h2>
+              {reviewList.length === 0 && (
+                <p className="text-sm text-gray-400 mb-5">No reviews yet — be the first.</p>
+              )}
+              {reviewList.length > 0 && (
+                <div className="mb-6">
+                  <ReviewsList reviews={reviewList} />
+                </div>
+              )}
+              <div className={reviewList.length > 0 ? 'pt-5 border-t border-gray-100' : ''}>
+                <p className="text-sm font-semibold text-gray-700 mb-4">Leave a review</p>
+                <ReviewForm toolId={tool.id} toolName={tool.name} />
+              </div>
+            </div>
 
             {/* Related tools */}
             {relatedTools && relatedTools.length > 0 && (
@@ -215,9 +259,9 @@ export default async function ToolDetailPage({ params }: Props) {
               </p>
 
               {tool.nonprofit_deal && (
-                <div className="bg-green-50 border border-green-100 rounded-xl p-3 mb-5">
-                  <p className="text-xs font-semibold text-green-800 mb-1">Nonprofit Deal</p>
-                  <p className="text-sm text-green-700">{tool.nonprofit_deal}</p>
+                <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 mb-5">
+                  <p className="text-xs font-semibold text-emerald-800 mb-1">Nonprofit Deal</p>
+                  <p className="text-sm text-emerald-700 leading-relaxed">{tool.nonprofit_deal}</p>
                 </div>
               )}
 
@@ -243,6 +287,12 @@ export default async function ToolDetailPage({ params }: Props) {
                   <div className="flex justify-between">
                     <dt className="text-gray-500">Category</dt>
                     <dd className="font-medium text-gray-900">{tool.category.name}</dd>
+                  </div>
+                )}
+                {reviewList.length > 0 && (
+                  <div className="flex justify-between">
+                    <dt className="text-gray-500">Rating</dt>
+                    <dd className="font-medium text-gray-900">⭐ {avgRating!.toFixed(1)} / 5</dd>
                   </div>
                 )}
                 <div className="flex justify-between">

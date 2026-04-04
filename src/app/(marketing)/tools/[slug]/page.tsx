@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAnonClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -8,23 +9,83 @@ import ToolActions from '@/components/tools/ToolActions'
 import ReviewForm from '@/components/reviews/ReviewForm'
 import ReviewsList from '@/components/reviews/ReviewsList'
 
+// Re-render at most once per hour so new tools and edits go live quickly
+export const revalidate = 3600
+
 interface Props {
   params: { slug: string }
+}
+
+// Pre-render all verified tool pages at build time for maximum SEO performance
+export async function generateStaticParams() {
+  const supabase = createAnonClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  )
+  const { data } = await supabase
+    .from('tools')
+    .select('slug')
+    .eq('is_verified', true)
+  return (data ?? []).map(t => ({ slug: t.slug as string }))
+}
+
+// Build an SEO-optimised meta description from real tool data
+function buildDescription(tool: {
+  name: string
+  description: string
+  pricing_model: string
+  nonprofit_deal: string | null
+}): string {
+  const pricingIntro: Record<string, string> = {
+    free:               `${tool.name} is completely free for nonprofits.`,
+    freemium:           `${tool.name} offers a free plan nonprofits can use at no cost.`,
+    nonprofit_discount: `${tool.name} provides special discounted pricing for nonprofits.`,
+  }
+  const intro = pricingIntro[tool.pricing_model] ?? `${tool.name} is available for nonprofits.`
+  const deal  = tool.nonprofit_deal ? ` ${tool.nonprofit_deal}.` : ''
+  return `${intro}${deal} ${tool.description} Discover free and discounted software for nonprofits at Free For NonProfits.`.slice(0, 160)
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = await createClient()
   const { data: tool } = await supabase
     .from('tools')
-    .select('name, description')
+    .select('name, description, pricing_model, nonprofit_deal, logo_url, slug')
     .eq('slug', params.slug)
     .single()
 
   if (!tool) return { title: 'Tool Not Found' }
 
+  const title       = `${tool.name} for Nonprofits — Free & Discounted | Free For NonProfits`
+  const description = buildDescription(tool)
+  const url         = `https://free-for-nonprofits.vercel.app/tools/${tool.slug}`
+
   return {
-    title: `${tool.name} for Nonprofits | Free For NonProfits`,
-    description: tool.description,
+    title,
+    description,
+    keywords: [
+      `${tool.name} for nonprofits`,
+      `${tool.name} nonprofit discount`,
+      `free ${tool.name}`,
+      `${tool.name} free plan`,
+      'nonprofit software',
+      'free tools for nonprofits',
+    ],
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: 'Free For NonProfits',
+      type: 'website',
+      ...(tool.logo_url ? { images: [{ url: tool.logo_url, width: 200, height: 200, alt: tool.name }] } : {}),
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
+      ...(tool.logo_url ? { images: [tool.logo_url] } : {}),
+    },
   }
 }
 
@@ -82,8 +143,38 @@ export default async function ToolDetailPage({ params }: Props) {
     ? reviewList.reduce((sum, r) => sum + r.rating, 0) / reviewList.length
     : null
 
+  // JSON-LD structured data — helps Google show rich results
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: tool.name,
+    description: tool.description,
+    url: tool.website_url,
+    applicationCategory: tool.category?.name ?? 'BusinessApplication',
+    operatingSystem: 'Web',
+    offers: {
+      '@type': 'Offer',
+      price: tool.pricing_model === 'free' ? '0' : undefined,
+      priceCurrency: 'USD',
+      description: tool.nonprofit_deal ?? pricingDescriptions[tool.pricing_model],
+    },
+    ...(avgRating && reviewList.length >= 3 ? {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: avgRating.toFixed(1),
+        reviewCount: reviewList.length,
+        bestRating: '5',
+        worstRating: '1',
+      },
+    } : {}),
+  }
+
   return (
     <main className="min-h-screen bg-gray-50">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Breadcrumb */}
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3">
@@ -172,6 +263,27 @@ export default async function ToolDetailPage({ params }: Props) {
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* SEO intro — targets "[Tool] for nonprofits" keyword */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-6">
+              <h2 className="text-base font-semibold text-gray-900 mb-2">
+                {tool.name} for Nonprofits
+              </h2>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                {tool.pricing_model === 'free' && (
+                  `${tool.name} is available completely free for nonprofit organizations. `
+                )}
+                {tool.pricing_model === 'freemium' && (
+                  `${tool.name} offers a free plan that nonprofits can use at no cost. `
+                )}
+                {tool.pricing_model === 'nonprofit_discount' && (
+                  `${tool.name} offers special discounted pricing for verified nonprofit organizations. `
+                )}
+                {tool.nonprofit_deal
+                  ? tool.nonprofit_deal
+                  : `Nonprofits can access ${tool.name} to ${tool.description.toLowerCase().replace(/\.$/, '')}.`}
+              </p>
             </div>
 
             {/* Features */}

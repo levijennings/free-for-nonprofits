@@ -12,9 +12,22 @@ export default function LoginPage({ searchParams }: Props) {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-9 h-9 bg-brand-500 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold">FF</span>
+          <Link href="/" className="inline-flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shadow-sm shrink-0">
+              <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  fill="white"
+                  d="M13.5 2H4C2.9 2 2 2.9 2 4V16C2 17.1 2.9 18 4 18H13.5L19 10L13.5 2ZM15.8 10C15.8 9.23 15.17 8.6 14.4 8.6C13.63 8.6 13 9.23 13 10C13 10.77 13.63 11.4 14.4 11.4C15.17 11.4 15.8 10.77 15.8 10Z"
+                />
+              </svg>
+            </div>
+            <div className="leading-none text-left">
+              <div className="text-[9px] font-bold text-gray-400 tracking-[0.18em] uppercase">Free For</div>
+              <div className="text-[17px] font-extrabold tracking-tight text-gray-900 -mt-0.5">
+                Non<span className="text-brand-600">Profits</span>
+              </div>
             </div>
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>

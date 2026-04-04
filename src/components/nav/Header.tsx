@@ -85,6 +85,9 @@ export default function Header() {
             <Link href="/submit" className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${pathname === '/submit' ? 'text-brand-600 bg-brand-50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}>
               Submit a Tool
             </Link>
+            <Link href="/wishlist" className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${pathname === '/wishlist' ? 'text-brand-600 bg-brand-50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}>
+              Wishlist
+            </Link>
             <Link href="/about" className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${pathname === '/about' ? 'text-brand-600 bg-brand-50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}>
               About
             </Link>

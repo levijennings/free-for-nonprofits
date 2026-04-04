@@ -7,6 +7,7 @@ import { createAdminClient, ADMIN_EMAIL } from '@/lib/supabase/admin'
 import Header from '@/components/nav/Header'
 import SetRotwForm from '@/components/admin/SetRotwForm'
 import SubmissionsPanel from '@/components/admin/SubmissionsPanel'
+import FulfillRequestButton from '@/components/admin/FulfillRequestButton'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -46,6 +47,7 @@ export default async function AdminPage() {
     { data: submissions },
     { data: users },
     { data: topTools },
+    { data: topRequests },
   ] = await Promise.all([
     admin.from('tools').select('*', { count: 'exact', head: true }).eq('is_verified', true),
     admin.from('profiles').select('*', { count: 'exact', head: true }),
@@ -89,6 +91,13 @@ export default async function AdminPage() {
       .select('id, name, slug, save_count, using_count, favorite_count, review_count, rating_avg')
       .eq('is_verified', true)
       .order('save_count', { ascending: false })
+      .limit(10),
+
+    // top tool requests by votes
+    admin
+      .from('tool_requests')
+      .select('id, name, category_slug, vote_count, status, created_at')
+      .order('vote_count', { ascending: false })
       .limit(10),
   ])
 
@@ -188,6 +197,55 @@ export default async function AdminPage() {
                   )}
                 </div>
                 <SubmissionsPanel initial={enrichedSubmissions} />
+              </section>
+
+              {/* Community Wishlist */}
+              <section className="bg-white rounded-2xl border border-gray-100 p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <h2 className="text-lg font-bold text-gray-900">🗳️ Community Wishlist</h2>
+                  <Link href="/wishlist" target="_blank" className="text-xs text-brand-500 hover:text-brand-700 font-medium">
+                    View public page →
+                  </Link>
+                </div>
+                {(topRequests ?? []).length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-6">No requests yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {(topRequests ?? []).map((req, i) => (
+                      <div key={req.id} className="flex items-start gap-3">
+                        <div className="flex flex-col items-center gap-0.5 shrink-0 pt-0.5">
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm ${
+                            req.status === 'fulfilled' ? 'bg-green-100 text-green-700' : 'bg-brand-50 text-brand-700'
+                          }`}>
+                            {req.vote_count}
+                          </div>
+                          <span className="text-[9px] text-gray-400 font-medium">votes</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {i < 3 && req.status === 'open' && (
+                              <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">#{i+1}</span>
+                            )}
+                            <span className="text-sm font-semibold text-gray-900">{req.name}</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                              req.status === 'fulfilled' ? 'bg-green-100 text-green-700' :
+                              req.status === 'declined'  ? 'bg-gray-100 text-gray-500' :
+                              'bg-blue-100 text-blue-700'
+                            }`}>
+                              {req.status === 'fulfilled' ? 'Added ✓' : req.status === 'declined' ? 'Declined' : 'Open'}
+                            </span>
+                          </div>
+                          {req.category_slug && (
+                            <p className="text-xs text-gray-400 mt-0.5">{req.category_slug.replace(/-/g, ' ')}</p>
+                          )}
+                          {req.status === 'open' && (
+                            <FulfillRequestButton requestId={req.id} requestName={req.name} />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </section>
             </div>
 

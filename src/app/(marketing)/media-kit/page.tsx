@@ -2,8 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import Header from '@/components/nav/Header'
-import { Footer } from '@/components/layout/Footer'
 
 const LogoIcon = ({ className = '' }: { className?: string }) => (
   <svg className={className} viewBox="0 0 20 20" fill="none">
@@ -116,9 +114,7 @@ function CopyButton({ value, label }: { value: string; label?: string }) {
 
 export default function MediaKitPage() {
   return (
-    <>
-      <Header />
-      <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-white">
 
         {/* Hero */}
         <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-brand-900 text-white py-20">
@@ -320,8 +316,6 @@ export default function MediaKitPage() {
           </section>
 
         </div>
-      </main>
-      <Footer />
-    </>
+    </main>
   )
 }

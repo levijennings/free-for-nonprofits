@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/nav/Header'
+import ToolLogo from '@/components/tools/ToolLogo'
 
 const pricingLabels: Record<string, string> = {
   free: 'Free',
@@ -118,13 +119,7 @@ export default async function DashboardPage() {
                     if (!tool) return null
                     return (
                       <div key={saved.id} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-start gap-4">
-                        {tool.logo_url ? (
-                          <img src={tool.logo_url} alt={tool.name} className="w-11 h-11 rounded-xl object-contain border border-gray-100 p-1 shrink-0" />
-                        ) : (
-                          <div className="w-11 h-11 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
-                            <span className="text-brand-500 font-bold">{tool.name[0]}</span>
-                          </div>
-                        )}
+                        <ToolLogo src={tool.logo_url || ''} alt={tool.name} className="w-11 h-11 rounded-xl object-contain border border-gray-100 p-1 shrink-0" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <Link href={`/tools/${tool.slug}`} className="font-semibold text-gray-900 hover:text-brand-600 transition-colors">
@@ -166,13 +161,7 @@ export default async function DashboardPage() {
                       href={`/tools/${tool.slug}`}
                       className="flex items-center gap-3 group"
                     >
-                      {tool.logo_url ? (
-                        <img src={tool.logo_url} alt={tool.name} className="w-8 h-8 rounded-lg object-contain border border-gray-100 p-0.5 shrink-0" />
-                      ) : (
-                        <div className="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center shrink-0">
-                          <span className="text-brand-500 font-bold text-xs">{tool.name[0]}</span>
-                        </div>
-                      )}
+                      <ToolLogo src={tool.logo_url || ''} alt={tool.name} className="w-8 h-8 rounded-lg object-contain border border-gray-100 p-0.5 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 group-hover:text-brand-600 transition-colors truncate">{tool.name}</p>
                         <p className="text-xs text-gray-400">{pricingLabels[tool.pricing_model]}</p>

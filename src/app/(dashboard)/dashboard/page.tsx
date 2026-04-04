@@ -65,6 +65,8 @@ export default async function DashboardPage() {
     { data: recentReviews },
     { data: userReviews },
     { data: userSubmissions },
+    { data: resourceOfWeek },
+    { data: newTools },
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
 
@@ -96,6 +98,24 @@ export default async function DashboardPage() {
     supabase.from('reviews').select('id').eq('user_id', user.id).limit(1),
 
     supabase.from('tool_submissions').select('id').eq('submitted_by', user.id).limit(1),
+
+    // Resource of the week — most recent weekly_features row where week_start <= today
+    supabase
+      .from('weekly_features')
+      .select('id, blurb, week_start, tool:tools(id, name, slug, description, logo_url, pricing_model, nonprofit_deal, website_url, using_count, save_count)')
+      .lte('week_start', new Date().toISOString().slice(0, 10))
+      .order('week_start', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+
+    // New resources — tools approved in the last 45 days
+    supabase
+      .from('tools')
+      .select('id, name, slug, description, logo_url, pricing_model, created_at')
+      .eq('is_verified', true)
+      .gte('created_at', new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString())
+      .order('created_at', { ascending: false })
+      .limit(5),
   ])
 
   // Fetch profiles for recent reviewers (separate query because reviews.user_id → auth.users, not profiles)
@@ -149,6 +169,76 @@ export default async function DashboardPage() {
               <p className="text-sm text-gray-500 mt-1">Nonprofits using</p>
             </div>
           </div>
+
+          {/* Resource of the week */}
+          {resourceOfWeek && (() => {
+            const rotw = resourceOfWeek.tool as unknown as {
+              id: string; name: string; slug: string; description: string;
+              logo_url: string; pricing_model: string; nonprofit_deal: string;
+              website_url: string; using_count: number; save_count: number;
+            }
+            if (!rotw) return null
+            return (
+              <div className="mb-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 via-brand-700 to-teal-800 p-6 text-white shadow-lg">
+                {/* Background texture */}
+                <div className="absolute inset-0 opacity-10" style={{
+                  backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
+                  backgroundSize: '24px 24px'
+                }} />
+
+                <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                  {/* Label */}
+                  <div className="shrink-0">
+                    <div className="inline-flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1 text-xs font-semibold tracking-wide uppercase mb-3">
+                      <span>⭐</span> Resource of the week
+                    </div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shrink-0 shadow">
+                        <ToolLogo src={rotw.logo_url || ''} alt={rotw.name} className="w-9 h-9 object-contain" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-white">{rotw.name}</h3>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                          rotw.pricing_model === 'free' ? 'bg-green-400/30 text-green-100' :
+                          rotw.pricing_model === 'freemium' ? 'bg-blue-400/30 text-blue-100' :
+                          'bg-purple-400/30 text-purple-100'
+                        }`}>
+                          {pricingLabels[rotw.pricing_model] ?? rotw.pricing_model}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-white/85 text-sm leading-relaxed max-w-xl">
+                      {resourceOfWeek.blurb || rotw.description}
+                    </p>
+                    {rotw.nonprofit_deal && (
+                      <p className="mt-2 text-xs text-green-200 font-medium">🎁 {rotw.nonprofit_deal}</p>
+                    )}
+                    <div className="flex items-center gap-4 mt-4">
+                      <Link
+                        href={`/tools/${rotw.slug}`}
+                        className="inline-flex items-center gap-1.5 bg-white text-brand-700 hover:bg-brand-50 font-semibold text-sm px-4 py-2 rounded-xl transition-colors shadow"
+                      >
+                        Learn more →
+                      </Link>
+                      <a
+                        href={rotw.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-white/80 hover:text-white text-sm font-medium transition-colors"
+                      >
+                        Visit site ↗
+                      </a>
+                      {(rotw.using_count > 0 || rotw.save_count > 0) && (
+                        <span className="text-white/60 text-xs ml-auto">
+                          {rotw.using_count > 0 ? `${rotw.using_count} nonprofits using` : `${rotw.save_count} saved`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left column: saved tools + activity feed */}
@@ -316,6 +406,41 @@ export default async function DashboardPage() {
                   </div>
                   <Link href="/tools" className="block mt-4 text-center text-sm text-brand-500 hover:text-brand-700 font-medium transition-colors">
                     View all tools →
+                  </Link>
+                </div>
+              )}
+
+              {/* New resources */}
+              {newTools && newTools.length > 0 && (
+                <div className="bg-white rounded-2xl border border-gray-100 p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-gray-900">✨ New resources</h3>
+                    <span className="text-xs text-gray-400">last 45 days</span>
+                  </div>
+                  <div className="space-y-3">
+                    {newTools.map((tool) => {
+                      const daysAgo = Math.floor((Date.now() - new Date(tool.created_at).getTime()) / (1000 * 60 * 60 * 24))
+                      return (
+                        <Link
+                          key={tool.id}
+                          href={`/tools/${tool.slug}`}
+                          className="flex items-center gap-3 group"
+                        >
+                          <ToolLogo src={tool.logo_url || ''} alt={tool.name} className="w-9 h-9 rounded-lg object-contain border border-gray-100 p-0.5 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 group-hover:text-brand-600 transition-colors truncate">{tool.name}</p>
+                            <p className="text-xs text-gray-400">
+                              {daysAgo === 0 ? 'Added today' : daysAgo === 1 ? 'Added yesterday' : `Added ${daysAgo}d ago`}
+                              {' · '}{pricingLabels[tool.pricing_model] ?? tool.pricing_model}
+                            </p>
+                          </div>
+                          <span className="shrink-0 inline-block px-1.5 py-0.5 text-xs font-semibold bg-brand-50 text-brand-600 rounded-full">New</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                  <Link href="/tools" className="block mt-4 text-center text-sm text-brand-500 hover:text-brand-700 font-medium transition-colors">
+                    See all tools →
                   </Link>
                 </div>
               )}

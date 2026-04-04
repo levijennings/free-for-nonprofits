@@ -2,9 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import SaveToolButton from '@/components/tools/SaveToolButton'
 import ToolLogo from '@/components/tools/ToolLogo'
 import AffiliateLink from '@/components/tools/AffiliateLink'
+import ToolActions from '@/components/tools/ToolActions'
 import ReviewForm from '@/components/reviews/ReviewForm'
 import ReviewsList from '@/components/reviews/ReviewsList'
 
@@ -51,7 +51,7 @@ export default async function ToolDetailPage({ params }: Props) {
 
   const { data: tool } = await supabase
     .from('tools')
-    .select(`*, category:categories(name, slug, icon)`)
+    .select(`*, save_count, favorite_count, using_count, category:categories(name, slug, icon)`)
     .eq('slug', params.slug)
     .single()
 
@@ -272,7 +272,14 @@ export default async function ToolDetailPage({ params }: Props) {
                 affiliateUrl={tool.affiliate_url}
               />
 
-              <SaveToolButton toolId={tool.id} toolName={tool.name} />
+              <ToolActions
+                toolId={tool.id}
+                toolName={tool.name}
+                toolSlug={tool.slug}
+                initialSaveCount={tool.save_count ?? 0}
+                initialFavoriteCount={tool.favorite_count ?? 0}
+                initialUsingCount={tool.using_count ?? 0}
+              />
             </div>
 
             {/* Metadata */}

@@ -46,6 +46,7 @@ export default async function ToolsPage({
     .select(`
       id, name, slug, description, website_url, logo_url,
       pricing_model, nonprofit_deal, rating_avg, review_count, is_featured,
+      save_count, favorite_count, using_count,
       category:categories(name, slug, icon)
     `)
     .eq('is_verified', true)
@@ -201,12 +202,20 @@ export default async function ToolsPage({
                     )}
 
                     <div className="flex items-center justify-between mt-auto pt-1">
-                      {tool.review_count > 0 ? (
-                        <span className="text-xs text-gray-400">⭐ {Number(tool.rating_avg).toFixed(1)} · {tool.review_count} reviews</span>
-                      ) : (
-                        <span />
-                      )}
-                      <span className="text-xs font-semibold text-brand-600 group-hover:translate-x-0.5 transition-transform">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {tool.review_count > 0 && (
+                          <span className="text-xs text-gray-400">⭐ {Number(tool.rating_avg).toFixed(1)} ({tool.review_count})</span>
+                        )}
+                        {(tool.using_count > 0 || tool.save_count > 0) && (
+                          <span className="text-xs text-gray-400">
+                            {[
+                              tool.using_count > 0 && `${tool.using_count} using`,
+                              tool.save_count  > 0 && `${tool.save_count} saved`,
+                            ].filter(Boolean).join(' · ')}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs font-semibold text-brand-600 group-hover:translate-x-0.5 transition-transform shrink-0">
                         Learn more →
                       </span>
                     </div>

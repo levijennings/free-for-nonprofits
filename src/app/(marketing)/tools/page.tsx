@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import ToolLogo from '@/components/tools/ToolLogo'
 
 export const metadata: Metadata = {
   title: 'Browse Free Nonprofit Tools | Free For NonProfits',
@@ -174,14 +175,10 @@ export default async function ToolsPage({
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-3 min-w-0">
                         {tool.logo_url ? (
-                          <img
+                          <ToolLogo
                             src={tool.logo_url}
                             alt={tool.name}
                             className="w-10 h-10 rounded-xl object-contain border border-gray-100 p-1 bg-white shrink-0"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement
-                              target.style.display = 'none'
-                            }}
                           />
                         ) : (
                           <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">

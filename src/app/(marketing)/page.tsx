@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import ToolLogo from '@/components/tools/ToolLogo'
 
 const pricingColors: Record<string, string> = {
   free: 'bg-green-100 text-green-800',
@@ -143,11 +144,10 @@ export default async function HomePage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3 min-w-0">
                     {tool.logo_url ? (
-                      <img
+                      <ToolLogo
                         src={tool.logo_url}
                         alt={tool.name}
                         className="w-10 h-10 rounded-xl object-contain border border-gray-100 p-1 shrink-0"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">

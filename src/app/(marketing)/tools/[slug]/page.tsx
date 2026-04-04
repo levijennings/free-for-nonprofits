@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import SaveToolButton from '@/components/tools/SaveToolButton'
+import ToolLogo from '@/components/tools/ToolLogo'
 
 interface Props {
   params: { slug: string }
@@ -97,11 +98,10 @@ export default async function ToolDetailPage({ params }: Props) {
             <div className="bg-white rounded-2xl border border-gray-100 p-6">
               <div className="flex items-start gap-4">
                 {tool.logo_url && (
-                  <img
+                  <ToolLogo
                     src={tool.logo_url}
                     alt={tool.name}
                     className="w-16 h-16 rounded-xl object-contain border border-gray-100 p-1 bg-white shrink-0"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                   />
                 )}
                 <div className="flex-1 min-w-0">

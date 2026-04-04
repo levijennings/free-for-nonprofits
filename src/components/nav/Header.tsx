@@ -41,15 +41,24 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-brand-700 rounded-lg flex items-center justify-center shadow-sm">
-              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+          <Link href="/" className="flex items-center gap-3 shrink-0">
+            <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shadow-sm shrink-0">
+              <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
+                {/* Price tag: body points right, hole near pointed tip */}
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  fill="white"
+                  d="M13.5 2H4C2.9 2 2 2.9 2 4V16C2 17.1 2.9 18 4 18H13.5L19 10L13.5 2ZM15.8 10C15.8 9.23 15.17 8.6 14.4 8.6C13.63 8.6 13 9.23 13 10C13 10.77 13.63 11.4 14.4 11.4C15.17 11.4 15.8 10.77 15.8 10Z"
+                />
               </svg>
             </div>
-            <span className="font-extrabold text-gray-900 hidden sm:block tracking-tight">
-              Free For <span className="text-brand-600">NonProfits</span>
-            </span>
+            <div className="hidden sm:block leading-none">
+              <div className="text-[9px] font-bold text-gray-400 tracking-[0.18em] uppercase">Free For</div>
+              <div className="text-[15px] font-extrabold tracking-tight text-gray-900 -mt-0.5">
+                Non<span className="text-brand-600">Profits</span>
+              </div>
+            </div>
           </Link>
 
           {/* Search */}

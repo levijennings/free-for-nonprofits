@@ -10,16 +10,18 @@ import SubmissionsPanel from '@/components/admin/SubmissionsPanel'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-function StatCard({ label, value, sub, color = 'text-gray-900' }: {
-  label: string; value: string | number; sub?: string; color?: string
+function StatCard({ label, value, sub, color = 'text-gray-900', href }: {
+  label: string; value: string | number; sub?: string; color?: string; href?: string
 }) {
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5">
-      <p className={`text-3xl font-bold ${color}`}>{value}</p>
+  const inner = (
+    <div className={`bg-white rounded-2xl border border-gray-100 p-5 transition-all ${href ? 'hover:border-brand-200 hover:shadow-sm cursor-pointer group' : ''}`}>
+      <p className={`text-3xl font-bold ${color} ${href ? 'group-hover:opacity-80' : ''}`}>{value}</p>
       <p className="text-sm text-gray-500 mt-1">{label}</p>
       {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+      {href && <p className="text-xs text-brand-500 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">View all →</p>}
     </div>
   )
+  return href ? <Link href={href}>{inner}</Link> : inner
 }
 
 // ── page ─────────────────────────────────────────────────────────────────────
@@ -130,13 +132,13 @@ export default async function AdminPage() {
 
           {/* KPI grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4 mb-10">
-            <StatCard label="Verified tools" value={toolCount ?? 0} color="text-brand-600" />
-            <StatCard label="Total users" value={userCount ?? 0} sub={`+${newUsersThisWeek?.length ?? 0} this week`} color="text-purple-600" />
-            <StatCard label="Reviews written" value={reviewCount ?? 0} color="text-amber-500" />
+            <StatCard label="Verified tools" value={toolCount ?? 0} color="text-brand-600" href="/admin/tools" />
+            <StatCard label="Total users" value={userCount ?? 0} sub={`+${newUsersThisWeek?.length ?? 0} this week`} color="text-purple-600" href="/admin/users" />
+            <StatCard label="Reviews written" value={reviewCount ?? 0} color="text-amber-500" href="/admin/tools?sort=reviews" />
             <StatCard label="Pending submissions" value={pendingCount ?? 0} color={pendingCount ? 'text-red-500' : 'text-gray-400'} />
-            <StatCard label="Total saves" value={totalSaves} color="text-blue-600" />
-            <StatCard label="'I use this' clicks" value={totalUsing} color="text-teal-600" />
-            <StatCard label="Favorites" value={totalFavs} color="text-rose-500" />
+            <StatCard label="Total saves" value={totalSaves} color="text-blue-600" href="/admin/tools?sort=saves" />
+            <StatCard label="'I use this' clicks" value={totalUsing} color="text-teal-600" href="/admin/tools?sort=using" />
+            <StatCard label="Favorites" value={totalFavs} color="text-rose-500" href="/admin/tools?sort=saves" />
             <StatCard label="Engagement score" value={totalSaves + totalUsing * 2 + totalFavs + (reviewCount ?? 0) * 3} sub="saves + 2×using + favs + 3×reviews" color="text-gray-700" />
           </div>
 
@@ -194,46 +196,56 @@ export default async function AdminPage() {
 
               {/* Top tools */}
               <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                <h3 className="font-bold text-gray-900 mb-4">Top tools by saves</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-gray-900">Top tools by saves</h3>
+                  <Link href="/admin/tools" className="text-xs text-brand-500 hover:text-brand-700 font-medium">View all →</Link>
+                </div>
                 <div className="space-y-2">
                   {(topTools ?? []).map((tool, i) => (
-                    <div key={tool.id} className="flex items-center gap-3">
+                    <Link key={tool.id} href={`/admin/tools/${tool.slug}`} className="flex items-center gap-3 group hover:bg-gray-50 -mx-2 px-2 py-1 rounded-lg transition-colors">
                       <span className="text-xs font-bold text-gray-300 w-4 shrink-0">{i + 1}</span>
                       <div className="flex-1 min-w-0">
-                        <Link href={`/tools/${tool.slug}`} className="text-sm font-medium text-gray-800 hover:text-brand-600 transition-colors truncate block">
+                        <p className="text-sm font-medium text-gray-800 group-hover:text-brand-600 transition-colors truncate">
                           {tool.name}
-                        </Link>
+                        </p>
                         <p className="text-xs text-gray-400">
                           {tool.save_count} saved · {tool.using_count} using
                           {tool.review_count > 0 && ` · ★${Number(tool.rating_avg).toFixed(1)} (${tool.review_count})`}
                         </p>
                       </div>
-                    </div>
+                      <span className="text-gray-200 group-hover:text-brand-400 transition-colors text-xs">→</span>
+                    </Link>
                   ))}
                 </div>
               </div>
 
               {/* Recent users */}
               <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                <h3 className="font-bold text-gray-900 mb-4">Recent users</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-gray-900">Recent users</h3>
+                  <Link href="/admin/users" className="text-xs text-brand-500 hover:text-brand-700 font-medium">View all →</Link>
+                </div>
                 <div className="space-y-3">
                   {(users ?? []).slice(0, 15).map(u => {
                     const daysAgo = Math.floor((Date.now() - new Date(u.created_at).getTime()) / (1000 * 60 * 60 * 24))
                     return (
-                      <div key={u.id} className="flex items-start gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold shrink-0">
+                      <Link key={u.id} href={`/admin/users/${u.id}`} className="flex items-start gap-2.5 group hover:bg-gray-50 -mx-2 px-2 py-1 rounded-lg transition-colors">
+                        <div className="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold shrink-0 group-hover:bg-brand-200 transition-colors">
                           {(u.display_name || u.org_name || 'A').slice(0, 1).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{u.org_name || u.display_name || 'Anonymous'}</p>
+                          <p className="text-sm font-medium text-gray-900 group-hover:text-brand-600 transition-colors truncate">{u.org_name || u.display_name || 'Anonymous'}</p>
                           <p className="text-xs text-gray-400">{daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : `${daysAgo}d ago`}</p>
                         </div>
-                      </div>
+                        <span className="text-gray-200 group-hover:text-brand-400 transition-colors text-xs self-center">→</span>
+                      </Link>
                     )
                   })}
                 </div>
                 {(users?.length ?? 0) > 15 && (
-                  <p className="text-xs text-gray-400 mt-3 text-center">+ {(users?.length ?? 0) - 15} more</p>
+                  <Link href="/admin/users" className="block text-xs text-brand-500 hover:text-brand-700 mt-3 text-center font-medium">
+                    + {(users?.length ?? 0) - 15} more users →
+                  </Link>
                 )}
               </div>
 

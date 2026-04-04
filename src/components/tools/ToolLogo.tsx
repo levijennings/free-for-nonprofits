@@ -6,22 +6,14 @@ interface Props {
   src: string
   alt: string
   className?: string
+  websiteDomain?: string // e.g. 'mailchimp.com' — used for favicon fallback
 }
 
 function getInitial(alt: string) {
   return alt.trim().charAt(0).toUpperCase()
 }
 
-function getGoogleFaviconUrl(src: string) {
-  try {
-    const url = new URL(src)
-    return `https://www.google.com/s2/favicons?domain=${url.hostname}&sz=128`
-  } catch {
-    return null
-  }
-}
-
-export default function ToolLogo({ src, alt, className = '' }: Props) {
+export default function ToolLogo({ src, alt, className = '', websiteDomain }: Props) {
   const [errCount, setErrCount] = useState(0)
 
   if (errCount >= 2) {
@@ -32,7 +24,12 @@ export default function ToolLogo({ src, alt, className = '' }: Props) {
     )
   }
 
-  const imgSrc = errCount === 0 ? src : (getGoogleFaviconUrl(src) ?? src)
+  // On first error, fall back to Google Favicon using the tool's own domain
+  const faviconUrl = websiteDomain
+    ? `https://www.google.com/s2/favicons?domain=${websiteDomain}&sz=128`
+    : null
+
+  const imgSrc = errCount === 0 ? src : (faviconUrl ?? src)
 
   return (
     <img

@@ -4,11 +4,16 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import Turnstile from '@/components/Turnstile'
+
+// Captcha is active only when a site key is configured.
+const CAPTCHA_ENABLED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [orgName, setOrgName] = useState('')
+  const [captchaToken, setCaptchaToken] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -17,6 +22,12 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (CAPTCHA_ENABLED && !captchaToken) {
+      setError('Please complete the captcha to continue.')
+      return
+    }
+
     setLoading(true)
     setError('')
 
@@ -24,6 +35,7 @@ export default function SignupPage() {
       email,
       password,
       options: {
+        captchaToken: captchaToken || undefined,
         data: {
           display_name: orgName || email.split('@')[0],
           org_name: orgName,
@@ -144,9 +156,11 @@ export default function SignupPage() {
               </div>
             )}
 
+            <Turnstile onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} />
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (CAPTCHA_ENABLED && !captchaToken)}
               className="w-full py-3 bg-brand-500 hover:bg-brand-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating account...' : 'Create free account'}

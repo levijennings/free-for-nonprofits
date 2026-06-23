@@ -44,6 +44,19 @@ export default async function PreferencesPage() {
             }}
           />
 
+          <div className="mt-8 bg-white border border-gray-100 rounded-2xl p-5 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Get better recommendations</p>
+              <p className="text-sm text-gray-500">Answer a few optional questions to tailor the tools we suggest and your weekly roundup.</p>
+            </div>
+            <Link
+              href="/dashboard/survey"
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl transition-colors"
+            >
+              Personalize →
+            </Link>
+          </div>
+
           <div className="mt-8 pt-6 border-t border-gray-200">
             <p className="text-sm text-gray-500 mb-3">Want something specific that isn't in the directory yet?</p>
             <Link

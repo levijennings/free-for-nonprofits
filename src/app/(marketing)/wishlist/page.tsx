@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import Header from '@/components/nav/Header'
 import WishlistClient from '@/components/wishlist/WishlistClient'
 
 export const metadata = {
@@ -43,9 +42,7 @@ export default async function WishlistPage() {
   }))
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-gray-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
           {/* Page header */}
@@ -66,7 +63,6 @@ export default async function WishlistPage() {
             userId={user?.id ?? null}
           />
         </div>
-      </main>
-    </>
+    </main>
   )
 }

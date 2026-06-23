@@ -2,6 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Turnstile from '@/components/Turnstile'
+
+const CAPTCHA_ENABLED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
 const CATEGORIES = [
   { slug: 'crm-donor-management',   name: 'CRM & Donor Management' },
@@ -24,19 +27,27 @@ export default function SubmitToolPage() {
   })
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
+  const [captchaToken, setCaptchaToken] = useState('')
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(prev => ({ ...prev, [field]: e.target.value }))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (CAPTCHA_ENABLED && !captchaToken) {
+      setStatus('error')
+      setErrorMsg('Please complete the captcha to continue.')
+      return
+    }
+
     setStatus('submitting')
     setErrorMsg('')
 
     const res = await fetch('/api/submit-tool', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, captchaToken }),
     })
     const data = await res.json()
 
@@ -157,9 +168,11 @@ export default function SubmitToolPage() {
             <p className="text-sm text-red-600 font-medium">{errorMsg}</p>
           )}
 
+          <Turnstile onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} />
+
           <button
             type="submit"
-            disabled={status === 'submitting'}
+            disabled={status === 'submitting' || (CAPTCHA_ENABLED && !captchaToken)}
             className="w-full py-3 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-bold rounded-xl transition-colors text-sm"
           >
             {status === 'submitting' ? 'Submitting…' : 'Submit for review'}

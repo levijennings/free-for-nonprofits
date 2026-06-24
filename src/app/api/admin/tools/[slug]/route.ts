@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient, ADMIN_EMAIL } from '@/lib/supabase/admin'
+import { createAdminClient, isAdminEmail } from '@/lib/supabase/admin'
 
 const ALLOWED_FIELDS = [
   'is_verified',
@@ -19,7 +19,7 @@ export async function PATCH(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user || user.email !== ADMIN_EMAIL) {
+  if (!user || !isAdminEmail(user.email)) {
     return Response.json({ error: 'Forbidden' }, { status: 403 })
   }
 

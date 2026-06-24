@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient, ADMIN_EMAIL } from '@/lib/supabase/admin'
+import { createAdminClient, isAdminEmail } from '@/lib/supabase/admin'
 import Header from '@/components/nav/Header'
 import ToolLogo from '@/components/tools/ToolLogo'
 
@@ -56,7 +56,7 @@ function StatCard({ label, value, color = 'text-gray-900' }: { label: string; va
 export default async function AdminUserDetailPage({ params }: { params: { id: string } }) {
   const supabase = await createClient()
   const { data: { user: adminUser } } = await supabase.auth.getUser()
-  if (!adminUser || adminUser.email !== ADMIN_EMAIL) redirect('/dashboard')
+  if (!adminUser || !isAdminEmail(adminUser.email)) redirect('/dashboard')
 
   const admin = createAdminClient()
 

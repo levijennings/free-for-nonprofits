@@ -13,4 +13,13 @@ export function createAdminClient() {
   )
 }
 
-export const ADMIN_EMAIL = 'levi@dvlmnt.com'
+// Primary admin (used as the monthly-report recipient).
+export const ADMIN_EMAIL = 'levi.jennings@me.com'
+
+// All emails granted admin access. Add or remove here.
+export const ADMIN_EMAILS = ['levi.jennings@me.com', 'levi@dvlmnt.com']
+
+// Case-insensitive admin check used by every email-gated admin route.
+export function isAdminEmail(email?: string | null): boolean {
+  return !!email && ADMIN_EMAILS.map((e) => e.toLowerCase()).includes(email.toLowerCase())
+}

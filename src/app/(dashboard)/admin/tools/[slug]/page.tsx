@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient, ADMIN_EMAIL } from '@/lib/supabase/admin'
+import { createAdminClient, isAdminEmail } from '@/lib/supabase/admin'
 import Header from '@/components/nav/Header'
 import ToolLogo from '@/components/tools/ToolLogo'
 import ToolAdminActions from '@/components/admin/ToolAdminActions'
@@ -46,7 +46,7 @@ function StarRow({ rating }: { rating: number }) {
 export default async function AdminToolDetailPage({ params }: { params: { slug: string } }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.email !== ADMIN_EMAIL) redirect('/dashboard')
+  if (!user || !isAdminEmail(user.email)) redirect('/dashboard')
 
   const admin = createAdminClient()
 

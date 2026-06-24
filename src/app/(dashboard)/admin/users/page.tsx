@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient, ADMIN_EMAIL } from '@/lib/supabase/admin'
+import { createAdminClient, isAdminEmail } from '@/lib/supabase/admin'
 import Header from '@/components/nav/Header'
 
 const orgSizeLabels: Record<string, string> = {
@@ -31,7 +31,7 @@ export default async function AdminUsersPage({
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.email !== ADMIN_EMAIL) redirect('/dashboard')
+  if (!user || !isAdminEmail(user.email)) redirect('/dashboard')
 
   const admin = createAdminClient()
 

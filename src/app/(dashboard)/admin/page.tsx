@@ -229,6 +229,38 @@ export default async function AdminPage() {
             )
           })()}
 
+          {/* Analytics overview (embedded) */}
+          <section className="bg-white rounded-2xl border border-gray-100 p-6 mb-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">📊 Analytics overview</h2>
+              {process.env.NEXT_PUBLIC_GA_ID
+                ? <span className="text-xs font-semibold text-brand-600">GA4 connected</span>
+                : <span className="text-xs text-gray-400">GA4 not configured</span>}
+            </div>
+            {process.env.NEXT_PUBLIC_ANALYTICS_EMBED_URL ? (
+              <div className="rounded-xl overflow-hidden border border-gray-100">
+                <iframe
+                  src={process.env.NEXT_PUBLIC_ANALYTICS_EMBED_URL}
+                  title="Analytics dashboard"
+                  width="100%"
+                  height={640}
+                  style={{ border: 0 }}
+                  allowFullScreen
+                />
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-xl p-6 text-sm text-gray-600">
+                <p className="font-semibold text-gray-900 mb-2">Embed your live analytics dashboard here</p>
+                <ol className="list-decimal ml-5 space-y-1">
+                  <li>Set <code className="bg-gray-100 px-1 rounded">NEXT_PUBLIC_GA_ID</code> (your <code className="bg-gray-100 px-1 rounded">G-XXXXXXXXXX</code> Measurement ID) in Vercel to start collecting data.</li>
+                  <li>In <a className="text-brand-600 font-medium" href="https://lookerstudio.google.com" target="_blank" rel="noopener noreferrer">Looker Studio</a>, create a report from your GA4 property (or use the GA4 template).</li>
+                  <li>Share → Embed report → enable embedding → copy the embed URL.</li>
+                  <li>Set it as <code className="bg-gray-100 px-1 rounded">NEXT_PUBLIC_ANALYTICS_EMBED_URL</code> in Vercel and redeploy.</li>
+                </ol>
+              </div>
+            )}
+          </section>
+
           {/* Growth agent activity & schedule */}
           {(() => {
             const now = new Date()

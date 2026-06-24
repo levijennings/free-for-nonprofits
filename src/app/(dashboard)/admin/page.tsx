@@ -146,9 +146,12 @@ export default async function AdminPage() {
               </div>
               <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
             </div>
-            <Link href="/dashboard" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
-              ← Back to user view
-            </Link>
+            <div className="flex items-center gap-4">
+              <a href="/gtm-brief.html" target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-brand-600 hover:text-brand-800 transition-colors">📣 Go-to-Market brief →</a>
+              <Link href="/dashboard" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+                ← Back to user view
+              </Link>
+            </div>
           </div>
 
           {/* KPI grid */}

@@ -258,3 +258,79 @@ export async function sendWeeklyDigestEmail({
 </html>`,
   })
 }
+
+// ── Monthly admin report ──────────────────────────────────────────────────────
+
+export type MonthlyStats = {
+  month_label: string
+  items_added: { this_month: number; prev_month: number }
+  new_users: { this_month: number; prev_month: number }
+  active_users_30d: number
+  totals: { users: number; tools: number; pending_subs: number; open_requests: number }
+  top_tools: { name: string; slug: string; save_count: number; using_count: number; favorite_count: number }[]
+  top_categories: { name: string; tool_count: number }[]
+}
+
+function deltaLabel(cur: number, prev: number): string {
+  if (prev === 0) return cur > 0 ? '<span style="color:#15803d;">▲ new</span>' : '—'
+  const pct = Math.round(((cur - prev) / prev) * 100)
+  const color = pct >= 0 ? '#15803d' : '#b91c1c'
+  return `<span style="color:${color};">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct)}%</span>`
+}
+
+export async function sendMonthlyReportEmail({ toEmail, stats }: { toEmail: string; stats: MonthlyStats }) {
+  const metric = (label: string, value: number, sub: string) => `
+    <td style="padding:8px;width:33%;vertical-align:top;">
+      <div style="background:#f9fafb;border:1px solid #f3f4f6;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.06em;">${label}</div>
+        <div style="font-size:24px;font-weight:800;color:#111827;margin-top:2px;">${value}</div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:2px;">${sub}</div>
+      </div>
+    </td>`
+
+  const list = (items: { name: string; v: number }[]) =>
+    items.map((t, i) => `<tr><td style="padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:13px;color:#374151;">${i + 1}. ${t.name}</td><td style="padding:6px 0;border-bottom:1px solid #f3f4f6;font-size:13px;color:#9ca3af;text-align:right;">${t.v}</td></tr>`).join('')
+
+  await resend.emails.send({
+    from: FROM,
+    to: toEmail,
+    subject: `Free For NonProfits — ${stats.month_label} report`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="max-width:600px;margin:40px auto;background:#fff;border-radius:16px;border:1px solid #e5e7eb;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#0f172a,#16a34a);padding:28px 32px;">
+      <p style="margin:0;font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:0.15em;text-transform:uppercase;">Free For NonProfits · Admin</p>
+      <h1 style="margin:8px 0 0;font-size:22px;font-weight:800;color:#fff;">${stats.month_label} report</h1>
+    </div>
+    <div style="padding:28px 24px;">
+      <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        ${metric('Tools added', stats.items_added.this_month, `prev ${stats.items_added.prev_month} · ${deltaLabel(stats.items_added.this_month, stats.items_added.prev_month)}`)}
+        ${metric('New users', stats.new_users.this_month, `prev ${stats.new_users.prev_month} · ${deltaLabel(stats.new_users.this_month, stats.new_users.prev_month)}`)}
+        ${metric('Active (30d)', stats.active_users_30d, 'saves/favs/uses/reviews/logins')}
+      </tr></table>
+
+      <p style="margin:24px 0 6px;font-size:13px;color:#374151;">
+        Totals: <strong>${stats.totals.users}</strong> users · <strong>${stats.totals.tools}</strong> verified tools · <strong>${stats.totals.pending_subs}</strong> pending submissions · <strong>${stats.totals.open_requests}</strong> open requests
+      </p>
+
+      <div style="display:flex;gap:24px;margin-top:20px;">
+        <div style="flex:1;">
+          <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;">Top tools by saves</p>
+          <table width="100%" cellpadding="0" cellspacing="0">${list(stats.top_tools.map(t => ({ name: t.name, v: t.save_count })))}</table>
+        </div>
+        <div style="flex:1;">
+          <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;">Top categories</p>
+          <table width="100%" cellpadding="0" cellspacing="0">${list(stats.top_categories.map(c => ({ name: c.name, v: c.tool_count })))}</table>
+        </div>
+      </div>
+
+      <a href="${BASE_URL}/admin" style="display:inline-block;margin-top:26px;background:#16a34a;color:#fff;font-size:14px;font-weight:700;padding:12px 24px;border-radius:10px;text-decoration:none;">Open the admin dashboard →</a>
+    </div>
+  </div>
+</body>
+</html>`,
+  })
+}

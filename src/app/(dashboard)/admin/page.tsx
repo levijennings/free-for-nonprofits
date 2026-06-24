@@ -48,6 +48,7 @@ export default async function AdminPage() {
     { data: users },
     { data: topTools },
     { data: topRequests },
+    { data: monthlyStats },
   ] = await Promise.all([
     admin.from('tools').select('*', { count: 'exact', head: true }).eq('is_verified', true),
     admin.from('profiles').select('*', { count: 'exact', head: true }),
@@ -99,6 +100,9 @@ export default async function AdminPage() {
       .select('id, name, category_slug, vote_count, status, created_at')
       .order('vote_count', { ascending: false })
       .limit(10),
+
+    // monthly insights rollup (same source as the monthly email report)
+    admin.rpc('monthly_report_stats'),
   ])
 
   // Aggregate totals
@@ -150,6 +154,69 @@ export default async function AdminPage() {
             <StatCard label="Favorites" value={totalFavs} color="text-rose-500" href="/admin/tools?sort=saves" />
             <StatCard label="Engagement score" value={totalSaves + totalUsing * 2 + totalFavs + (reviewCount ?? 0) * 3} sub="saves + 2×using + favs + 3×reviews" color="text-gray-700" />
           </div>
+
+          {/* Monthly insights (mirrors the monthly email report) */}
+          {monthlyStats && (() => {
+            const m = monthlyStats as {
+              month_label: string
+              items_added: { this_month: number; prev_month: number }
+              new_users: { this_month: number; prev_month: number }
+              active_users_30d: number
+              top_tools: { name: string; slug: string; save_count: number }[]
+              top_categories: { name: string; tool_count: number }[]
+            }
+            const delta = (c: number, p: number) =>
+              p === 0 ? (c > 0 ? '▲ new' : '—') : `${c >= p ? '▲' : '▼'} ${Math.abs(Math.round(((c - p) / p) * 100))}%`
+            return (
+              <section className="bg-white rounded-2xl border border-gray-100 p-6 mb-10">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-gray-900">📈 Monthly Insights — {m.month_label}</h2>
+                  <span className="text-xs text-gray-400">vs. previous month</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs text-gray-500">Tools added</p>
+                    <p className="text-2xl font-bold text-gray-900">{m.items_added.this_month}</p>
+                    <p className="text-xs text-gray-400">prev {m.items_added.prev_month} · {delta(m.items_added.this_month, m.items_added.prev_month)}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs text-gray-500">New users</p>
+                    <p className="text-2xl font-bold text-gray-900">{m.new_users.this_month}</p>
+                    <p className="text-xs text-gray-400">prev {m.new_users.prev_month} · {delta(m.new_users.this_month, m.new_users.prev_month)}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs text-gray-500">Active users (30d)</p>
+                    <p className="text-2xl font-bold text-gray-900">{m.active_users_30d}</p>
+                    <p className="text-xs text-gray-400">saves / favs / uses / reviews / logins</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Top tools by saves</p>
+                    <ol className="space-y-1.5">
+                      {m.top_tools.map((t, i) => (
+                        <li key={t.slug} className="flex justify-between text-sm">
+                          <span className="text-gray-700">{i + 1}. {t.name}</span>
+                          <span className="text-gray-400">{t.save_count}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Top categories</p>
+                    <ol className="space-y-1.5">
+                      {m.top_categories.map((c, i) => (
+                        <li key={c.name} className="flex justify-between text-sm">
+                          <span className="text-gray-700">{i + 1}. {c.name}</span>
+                          <span className="text-gray-400">{c.tool_count}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                </div>
+              </section>
+            )
+          })()}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 

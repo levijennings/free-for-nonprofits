@@ -35,6 +35,24 @@ async function run(req: NextRequest) {
 
   const dryRun = new URL(req.url).searchParams.get('dryRun') === '1'
   const admin = createAdminClient()
+
+  // Idempotency: never send the digest twice in one week. This lets BOTH the
+  // Vercel Cron backstop and the Sunday agent call this endpoint safely —
+  // whichever runs first sends, the other becomes a no-op.
+  if (!dryRun) {
+    const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+    const { data: recent } = await admin
+      .from('agent_runs')
+      .select('id')
+      .eq('kind', 'weekly_digest')
+      .eq('status', 'success')
+      .gte('created_at', fiveDaysAgo)
+      .limit(1)
+    if (recent && recent.length) {
+      return NextResponse.json({ ok: true, alreadySent: true, reason: 'Weekly digest already sent in the last 5 days.' })
+    }
+  }
+
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
   const today = new Date().toISOString().slice(0, 10)
 
@@ -131,6 +149,7 @@ async function run(req: NextRequest) {
   }
 
   const summary = {
+    via: 'cron-endpoint',
     dryRun,
     recipients: list.length,
     sent,

@@ -27,6 +27,7 @@ interface ToolRequest {
   status: string
   vote_count: number
   created_at: string
+  admin_response: string | null
   voted: boolean
   is_own: boolean
 }
@@ -220,6 +221,13 @@ export default function WishlistClient({ initialRequests, userId }: Props) {
 
                     {req.description && (
                       <p className="mt-2 text-sm text-gray-500 leading-relaxed">{req.description}</p>
+                    )}
+
+                    {req.admin_response && (
+                      <div className="mt-3 bg-brand-50 border border-brand-100 rounded-xl p-4">
+                        <p className="text-xs font-bold text-brand-700 uppercase tracking-wide mb-1">✅ Team response</p>
+                        <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{req.admin_response}</p>
+                      </div>
                     )}
                   </div>
                 </div>

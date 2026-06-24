@@ -18,7 +18,7 @@ export default async function WishlistPage() {
     supabase.auth.getUser(),
     supabase
       .from('tool_requests')
-      .select('id, name, url, category_slug, description, status, vote_count, created_at, user_id')
+      .select('id, name, url, category_slug, description, status, vote_count, created_at, user_id, admin_response')
       .order('vote_count', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(100),

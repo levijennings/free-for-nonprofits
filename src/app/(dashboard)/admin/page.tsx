@@ -49,6 +49,7 @@ export default async function AdminPage() {
     { data: topTools },
     { data: topRequests },
     { data: monthlyStats },
+    { data: agentRuns },
   ] = await Promise.all([
     admin.from('tools').select('*', { count: 'exact', head: true }).eq('is_verified', true),
     admin.from('profiles').select('*', { count: 'exact', head: true }),
@@ -103,6 +104,13 @@ export default async function AdminPage() {
 
     // monthly insights rollup (same source as the monthly email report)
     admin.rpc('monthly_report_stats'),
+
+    // growth agent activity log
+    admin
+      .from('agent_runs')
+      .select('id, kind, status, summary, created_at')
+      .order('created_at', { ascending: false })
+      .limit(8),
   ])
 
   // Aggregate totals
@@ -214,6 +222,78 @@ export default async function AdminPage() {
                     </ol>
                   </div>
                 </div>
+              </section>
+            )
+          })()}
+
+          {/* Growth agent activity & schedule */}
+          {(() => {
+            const now = new Date()
+            const nextSun = new Date(now)
+            nextSun.setDate(now.getDate() + (((7 - now.getDay()) % 7) || 7))
+            const runs = (agentRuns ?? []) as { id: string; kind: string; status: string; summary: Record<string, any> | null; created_at: string }[]
+            const last = runs[0]
+            const kindLabel: Record<string, string> = { weekly_digest: 'Weekly digest', monthly_report: 'Monthly report', research: 'Research' }
+            const fmtSummary = (r: { summary: Record<string, any> | null }) => {
+              const s = (r.summary || {}) as Record<string, any>
+              const parts: string[] = []
+              if (s.tools_staged != null) parts.push(`${s.tools_staged} staged`)
+              if (s.sent != null) parts.push(`${s.sent} emails`)
+              if (s.dealOfWeek) parts.push(`deal: ${s.dealOfWeek}`)
+              else if (s.deal_of_week) parts.push(`deal: ${s.deal_of_week}`)
+              return parts.join(' · ') || '—'
+            }
+            return (
+              <section className="bg-white rounded-2xl border border-gray-100 p-6 mb-10">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-gray-900">🤖 Growth Agent</h2>
+                  <span className="text-xs text-gray-400">finds &amp; stages new tools for your approval</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs text-gray-500">Schedule</p>
+                    <p className="text-sm font-bold text-gray-900 mt-1">Sundays 7:00 AM PT</p>
+                    <p className="text-xs text-gray-400 mt-0.5">+ monthly report on the 1st</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs text-gray-500">Next run</p>
+                    <p className="text-sm font-bold text-gray-900 mt-1">{nextSun.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">research → stage → digest</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs text-gray-500">Total runs</p>
+                    <p className="text-2xl font-bold text-gray-900">{runs.length}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{last ? `last ${new Date(last.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : 'none yet'}</p>
+                  </div>
+                  <div className="bg-brand-50 rounded-xl p-4">
+                    <p className="text-xs text-brand-700">Awaiting approval</p>
+                    <p className="text-2xl font-bold text-brand-700">{pendingCount ?? 0}</p>
+                    <p className="text-xs text-brand-600 mt-0.5">staged tools to review</p>
+                  </div>
+                </div>
+                {runs.length === 0 ? (
+                  <p className="text-sm text-gray-500">
+                    No agent runs yet — the first run is scheduled for {nextSun.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}. Tools it finds will appear in the Submissions queue below for your approval.
+                  </p>
+                ) : (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Recent activity</p>
+                    <table className="w-full text-sm">
+                      <tbody>
+                        {runs.map((r) => (
+                          <tr key={r.id} className="border-b border-gray-100">
+                            <td className="py-2 pr-3 text-gray-700">{kindLabel[r.kind] ?? r.kind}</td>
+                            <td className="py-2 pr-3">
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${r.status === 'success' ? 'bg-green-100 text-green-700' : r.status === 'error' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'}`}>{r.status}</span>
+                            </td>
+                            <td className="py-2 pr-3 text-gray-500">{fmtSummary(r)}</td>
+                            <td className="py-2 text-right text-gray-400 text-xs">{new Date(r.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </section>
             )
           })()}

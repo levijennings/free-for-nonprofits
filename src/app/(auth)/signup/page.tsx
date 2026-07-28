@@ -3,6 +3,8 @@
 import { useRef, useState } from 'react'
 import Link from 'next/link'
 import Turnstile from '@/components/Turnstile'
+import PasswordInput from '@/components/ui/PasswordInput'
+import { getPasswordStrength } from '@/lib/password-strength'
 
 // Captcha is active only when a site key is configured.
 const CAPTCHA_ENABLED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
@@ -16,6 +18,8 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+
+  const strength = getPasswordStrength(password)
 
   // Timestamp the form as soon as this component mounts. Bots that script-fill
   // and submit within a second or two of hitting the page land far below
@@ -124,6 +128,9 @@ export default function SignupPage() {
                 placeholder="Habitat for Humanity Chicago"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
+              <p className="mt-1 text-xs text-gray-400">
+                Shown to other nonprofits on your reviews and activity. Leave blank to stay unlabeled.
+              </p>
             </div>
 
             <div>
@@ -144,8 +151,7 @@ export default function SignupPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Password <span className="text-red-500">*</span>
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 required
                 minLength={8}
                 value={password}
@@ -153,6 +159,21 @@ export default function SignupPage() {
                 placeholder="At least 8 characters"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
+              {password && (
+                <div className="mt-1.5">
+                  <div className="flex gap-1">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className={`h-1 flex-1 rounded-full transition-colors ${
+                          i < strength.score ? strength.barColor : 'bg-gray-100'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className="mt-1 text-xs text-gray-400">{strength.label}</p>
+                </div>
+              )}
             </div>
 
             {/*

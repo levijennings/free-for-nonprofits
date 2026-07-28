@@ -1,12 +1,16 @@
 import Link from 'next/link'
 import { login } from './actions'
+import PasswordInput from '@/components/ui/PasswordInput'
+import ResendConfirmationForm from '@/components/auth/ResendConfirmationForm'
 
 interface Props {
   searchParams: { error?: string }
 }
 
 export default function LoginPage({ searchParams }: Props) {
-  const hasError = searchParams.error === '1'
+  // '1' is a legacy alias for 'invalid', kept in case any old links/bookmarks
+  // still point at ?error=1.
+  const errorType = searchParams.error === '1' ? 'invalid' : searchParams.error
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -54,8 +58,7 @@ export default function LoginPage({ searchParams }: Props) {
                   Forgot password?
                 </Link>
               </div>
-              <input
-                type="password"
+              <PasswordInput
                 name="password"
                 required
                 placeholder="••••••••"
@@ -63,7 +66,7 @@ export default function LoginPage({ searchParams }: Props) {
               />
             </div>
 
-            {hasError && (
+            {errorType === 'invalid' && (
               <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
                 Invalid email or password. Please try again.
               </div>
@@ -76,6 +79,15 @@ export default function LoginPage({ searchParams }: Props) {
               Sign in
             </button>
           </form>
+
+          {errorType === 'unconfirmed' && (
+            <div className="mt-5 space-y-3">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
+                Your email hasn&apos;t been confirmed yet. Check your inbox for the confirmation link, or resend it below.
+              </div>
+              <ResendConfirmationForm />
+            </div>
+          )}
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">

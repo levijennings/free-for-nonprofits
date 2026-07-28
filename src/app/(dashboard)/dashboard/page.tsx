@@ -315,7 +315,12 @@ export default async function DashboardPage() {
                     {recentReviews.map((review) => {
                       const tool = review.tools as unknown as { name: string; slug: string } | null
                       const reviewer = profileMap[review.user_id] ?? null
-                      const label = reviewer?.org_name || reviewer?.display_name || null
+                      // Only ever show an org name here, never the account's
+                      // display_name — for anyone who left "Organization
+                      // name" blank at signup, display_name defaults to
+                      // their email's local part, which isn't meant to be
+                      // shown to other nonprofits in a public activity feed.
+                      const label = reviewer?.org_name || null
                       const initials = (label || 'AN').slice(0, 2).toUpperCase()
                       const isOwn = review.user_id === user.id
                       return (
@@ -447,7 +452,12 @@ export default async function DashboardPage() {
 
               {/* Account info */}
               <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                <h3 className="font-semibold text-gray-900 mb-4">Your account</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-900">Your account</h3>
+                  <Link href="/dashboard/account" className="text-xs font-medium text-brand-500 hover:text-brand-700 transition-colors">
+                    Edit
+                  </Link>
+                </div>
                 <dl className="space-y-2 text-sm">
                   <div>
                     <dt className="text-xs text-gray-400 mb-0.5">Email</dt>

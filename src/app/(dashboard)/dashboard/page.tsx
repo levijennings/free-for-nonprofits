@@ -84,7 +84,7 @@ export default async function DashboardPage() {
 
     supabase
       .from('tools')
-      .select('id, name, slug, description, logo_url, pricing_model, save_count, favorite_count, using_count')
+      .select('id, name, slug, description, logo_url, website_url, pricing_model, save_count, favorite_count, using_count')
       .eq('is_verified', true)
       .order('using_count', { ascending: false })
       .limit(4),
@@ -111,7 +111,7 @@ export default async function DashboardPage() {
     // New resources — tools approved in the last 45 days
     supabase
       .from('tools')
-      .select('id, name, slug, description, logo_url, pricing_model, created_at')
+      .select('id, name, slug, description, logo_url, website_url, pricing_model, created_at')
       .eq('is_verified', true)
       .gte('created_at', new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString())
       .order('created_at', { ascending: false })
@@ -174,7 +174,7 @@ export default async function DashboardPage() {
           {resourceOfWeek && (() => {
             const rotw = resourceOfWeek.tool as unknown as {
               id: string; name: string; slug: string; description: string;
-              logo_url: string; pricing_model: string; nonprofit_deal: string;
+              logo_url: string | null; pricing_model: string; nonprofit_deal: string;
               website_url: string; using_count: number; save_count: number;
             }
             if (!rotw) return null
@@ -194,7 +194,7 @@ export default async function DashboardPage() {
                     </div>
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shrink-0 shadow">
-                        <ToolLogo src={rotw.logo_url || ''} alt={rotw.name} className="w-9 h-9 object-contain" />
+                        <ToolLogo src={rotw.logo_url || ''} websiteUrl={rotw.website_url} alt={rotw.name} className="w-9 h-9 object-contain" />
                       </div>
                       <div>
                         <h3 className="text-xl font-bold text-white">{rotw.name}</h3>
@@ -272,12 +272,12 @@ export default async function DashboardPage() {
                     {savedTools.map((saved) => {
                       const tool = saved.tool as unknown as {
                         id: string; name: string; slug: string; description: string;
-                        logo_url: string; pricing_model: string; nonprofit_deal: string; website_url: string;
+                        logo_url: string | null; pricing_model: string; nonprofit_deal: string; website_url: string;
                       }
                       if (!tool) return null
                       return (
                         <div key={saved.id} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-start gap-4">
-                          <ToolLogo src={tool.logo_url || ''} alt={tool.name} className="w-11 h-11 rounded-xl object-contain border border-gray-100 p-1 shrink-0" />
+                          <ToolLogo src={tool.logo_url || ''} websiteUrl={tool.website_url} alt={tool.name} className="w-11 h-11 rounded-xl object-contain border border-gray-100 p-1 shrink-0" />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <Link href={`/tools/${tool.slug}`} className="font-semibold text-gray-900 hover:text-brand-600 transition-colors">
@@ -396,7 +396,7 @@ export default async function DashboardPage() {
                           href={`/tools/${tool.slug}`}
                           className="flex items-center gap-3 group"
                         >
-                          <ToolLogo src={tool.logo_url || ''} alt={tool.name} className="w-9 h-9 rounded-lg object-contain border border-gray-100 p-0.5 shrink-0" />
+                          <ToolLogo src={tool.logo_url || ''} websiteUrl={tool.website_url} alt={tool.name} className="w-9 h-9 rounded-lg object-contain border border-gray-100 p-0.5 shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900 group-hover:text-brand-600 transition-colors truncate">{tool.name}</p>
                             <p className="text-xs text-gray-400">
@@ -431,7 +431,7 @@ export default async function DashboardPage() {
                           href={`/tools/${tool.slug}`}
                           className="flex items-center gap-3 group"
                         >
-                          <ToolLogo src={tool.logo_url || ''} alt={tool.name} className="w-9 h-9 rounded-lg object-contain border border-gray-100 p-0.5 shrink-0" />
+                          <ToolLogo src={tool.logo_url || ''} websiteUrl={tool.website_url} alt={tool.name} className="w-9 h-9 rounded-lg object-contain border border-gray-100 p-0.5 shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900 group-hover:text-brand-600 transition-colors truncate">{tool.name}</p>
                             <p className="text-xs text-gray-400">

@@ -84,7 +84,7 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
   ] = await Promise.all([
     admin
       .from('saved_tools')
-      .select('id, created_at, tool:tools(id, name, slug, logo_url, pricing_model)', { count: 'exact' })
+      .select('id, created_at, tool:tools(id, name, slug, logo_url, website_url, pricing_model)', { count: 'exact' })
       .eq('user_id', params.id)
       .order('created_at', { ascending: false })
       .limit(20),
@@ -215,7 +215,7 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
               </div>
               <div className="space-y-2">
                 {(savedTools ?? []).map(row => {
-                  const tool = row.tool as unknown as { id: string; name: string; slug: string; logo_url: string | null; pricing_model: string } | null
+                  const tool = row.tool as unknown as { id: string; name: string; slug: string; logo_url: string | null; website_url: string | null; pricing_model: string } | null
                   if (!tool) return null
                   return (
                     <Link
@@ -224,7 +224,7 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
                       className="flex items-center gap-3 group hover:bg-gray-50 -mx-2 px-2 py-2 rounded-lg transition-colors"
                     >
                       <div className="w-8 h-8 rounded-lg border border-gray-100 bg-white flex items-center justify-center shrink-0">
-                        <ToolLogo src={tool.logo_url ?? ''} alt={tool.name} className="w-6 h-6 object-contain" />
+                        <ToolLogo src={tool.logo_url ?? ''} websiteUrl={tool.website_url} alt={tool.name} className="w-6 h-6 object-contain" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-800 group-hover:text-brand-600 transition-colors truncate">{tool.name}</p>

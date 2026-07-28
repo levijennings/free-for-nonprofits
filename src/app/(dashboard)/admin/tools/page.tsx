@@ -56,7 +56,7 @@ export default async function AdminToolsPage({
 
   let query = admin
     .from('tools')
-    .select('id, name, slug, logo_url, pricing_model, is_verified, save_count, using_count, favorite_count, review_count, rating_avg, created_at, category:categories(name)', { count: 'exact' })
+    .select('id, name, slug, logo_url, website_url, pricing_model, is_verified, save_count, using_count, favorite_count, review_count, rating_avg, created_at, category:categories(name)', { count: 'exact' })
 
   if (q)               query = query.ilike('name', `%${q}%`)
   if (filter === 'verified')   query = query.eq('is_verified', true)
@@ -157,7 +157,7 @@ export default async function AdminToolsPage({
                   >
                     {/* Logo */}
                     <div className="w-9 h-9 rounded-lg border border-gray-100 bg-white flex items-center justify-center shrink-0">
-                      <ToolLogo src={tool.logo_url ?? ''} alt={tool.name} className="w-7 h-7 object-contain" />
+                      <ToolLogo src={tool.logo_url ?? ''} websiteUrl={tool.website_url} alt={tool.name} className="w-7 h-7 object-contain" />
                     </div>
 
                     {/* Name + badges */}

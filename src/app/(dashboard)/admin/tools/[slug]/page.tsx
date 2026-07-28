@@ -124,7 +124,7 @@ export default async function AdminToolDetailPage({ params }: { params: { slug: 
               <div className="bg-white rounded-2xl border border-gray-100 p-6">
                 <div className="flex items-start gap-5">
                   <div className="w-16 h-16 rounded-xl border border-gray-100 bg-white flex items-center justify-center shrink-0 shadow-sm">
-                    <ToolLogo src={tool.logo_url ?? ''} alt={tool.name} className="w-12 h-12 object-contain" />
+                    <ToolLogo src={tool.logo_url ?? ''} websiteUrl={tool.website_url} alt={tool.name} className="w-12 h-12 object-contain" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">

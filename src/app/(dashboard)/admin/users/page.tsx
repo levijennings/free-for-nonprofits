@@ -53,28 +53,39 @@ export default async function AdminUsersPage({
   // Source of truth is auth.users — this also surfaces accounts that never
   // got a profile row (e.g. unconfirmed / bot signups), which a profiles-only
   // query would otherwise hide entirely.
-  // NOTE: capped at 1000 accounts per page of the admin API; if the user base
-  // grows past that, this will need real pagination against listUsers().
-  const [{ data: userPage }, { data: profiles }] = await Promise.all([
-    admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-    admin.from('profiles').select('id, display_name, org_name, org_size'),
-  ])
+  //
+  // This goes through the admin_list_users() RPC (a Postgres function,
+  // supabase/migrations/00011) rather than supabase-js's
+  // `admin.auth.admin.listUsers()`. That call goes through the separate
+  // GoTrue Admin HTTP API and was observed in production silently
+  // returning only a handful of users despite auth.users having 100+ rows
+  // — no error, just a short result. The RPC does the same auth.users +
+  // profiles join as a normal PostgREST query, the same reliable path
+  // already used for every other count on the admin pages.
+  const { data: userRows, error: userRowsError } = await admin.rpc('admin_list_users')
+  if (userRowsError) {
+    console.error('admin_list_users RPC failed:', userRowsError)
+  }
 
-  const profileById = new Map((profiles ?? []).map(p => [p.id, p]))
-
-  let users: MergedUser[] = (userPage?.users ?? []).map(u => {
-    const profile = profileById.get(u.id)
-    return {
-      id: u.id,
-      email: u.email ?? '',
-      authCreatedAt: u.created_at,
-      emailConfirmed: !!u.email_confirmed_at,
-      lastSignInAt: u.last_sign_in_at ?? null,
-      displayName: profile?.display_name ?? null,
-      orgName: profile?.org_name ?? null,
-      orgSize: profile?.org_size ?? null,
-    }
-  })
+  let users: MergedUser[] = (userRows ?? []).map((u: {
+    id: string
+    email: string | null
+    auth_created_at: string
+    email_confirmed: boolean
+    last_sign_in_at: string | null
+    display_name: string | null
+    org_name: string | null
+    org_size: string | null
+  }) => ({
+    id: u.id,
+    email: u.email ?? '',
+    authCreatedAt: u.auth_created_at,
+    emailConfirmed: u.email_confirmed,
+    lastSignInAt: u.last_sign_in_at,
+    displayName: u.display_name,
+    orgName: u.org_name,
+    orgSize: u.org_size,
+  }))
 
   if (q) {
     const needle = q.toLowerCase()

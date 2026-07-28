@@ -1,28 +1,29 @@
-import React from 'react';
+import { cn } from "@/lib/cn";
 
-export type BadgeVariant = 'default' | 'success' | 'warning' | 'info' | 'outline';
+export type BadgeVariant = "neutral" | "accent" | "free" | "freemium" | "discount" | "warn";
+
+const VARIANT: Record<BadgeVariant, string> = {
+  neutral: "bg-surface-inset text-fg-muted border-line",
+  accent: "bg-accent-subtle text-accent border-accent-line",
+  free: "bg-status-done-bg text-status-done border-accent-line",
+  freemium: "bg-surface-inset text-fg-muted border-line",
+  discount: "bg-status-progress-bg text-status-progress border-status-progress/30",
+  warn: "bg-status-warn-bg text-status-warn border-status-warn/30",
+};
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: BadgeVariant;
 }
 
-const variantClasses: Record<BadgeVariant, string> = {
-  default: 'bg-blue-100 text-blue-800',
-  success: 'bg-green-100 text-green-800',
-  warning: 'bg-yellow-100 text-yellow-800',
-  info: 'bg-cyan-100 text-cyan-800',
-  outline: 'border border-gray-300 text-gray-700 bg-white',
-};
-
-export const Badge: React.FC<BadgeProps> = ({ variant = 'default', className, children, ...props }) => {
-  const baseClasses = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium';
-  const badgeClasses = `${baseClasses} ${variantClasses[variant]} ${className || ''}`;
-
+export function Badge({ variant = "neutral", className, ...rest }: BadgeProps) {
   return (
-    <span className={badgeClasses} {...props}>
-      {children}
-    </span>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold",
+        VARIANT[variant],
+        className
+      )}
+      {...rest}
+    />
   );
-};
-
-Badge.displayName = 'Badge';
+}

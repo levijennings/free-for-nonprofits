@@ -1,63 +1,37 @@
-import React from 'react';
+import { cn } from "@/lib/cn";
 
-export type SkeletonVariant = 'text' | 'circle' | 'card' | 'rectangle';
+export type SkeletonVariant = "text" | "block" | "circle";
 
 export interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: SkeletonVariant;
-  width?: string | number;
-  height?: string | number;
-  count?: number;
 }
 
-export const Skeleton: React.FC<SkeletonProps> = ({
-  variant = 'text',
-  width,
-  height,
-  count = 1,
-  className,
-  ...props
-}) => {
-  const baseClasses = 'bg-gray-200 animate-pulse';
-
-  const variantClasses: Record<SkeletonVariant, string> = {
-    text: 'h-4 rounded',
-    circle: 'rounded-full',
-    card: 'rounded-lg',
-    rectangle: 'rounded',
-  };
-
-  const getDefaultDimensions = (): { width: string; height: string } => {
-    switch (variant) {
-      case 'text':
-        return { width: width ? String(width) : 'w-full', height: height ? String(height) : 'h-4' };
-      case 'circle':
-        return { width: width ? String(width) : 'w-12', height: height ? String(height) : 'h-12' };
-      case 'card':
-        return { width: width ? String(width) : 'w-full', height: height ? String(height) : 'h-40' };
-      case 'rectangle':
-        return { width: width ? String(width) : 'w-full', height: height ? String(height) : 'h-24' };
-      default:
-        return { width: String(width) || 'w-full', height: String(height) || 'h-4' };
-    }
-  };
-
-  const dimensions = getDefaultDimensions();
-  const widthClass = typeof width === 'string' ? width : dimensions.width;
-  const heightClass = typeof height === 'string' ? height : dimensions.height;
-
-  const skeletonClass = `${baseClasses} ${variantClasses[variant]} ${widthClass} ${heightClass} ${className || ''}`;
-
-  if (count > 1) {
-    return (
-      <div className="space-y-2" {...props}>
-        {Array.from({ length: count }).map((_, i) => (
-          <div key={i} className={skeletonClass} />
-        ))}
-      </div>
-    );
-  }
-
-  return <div className={skeletonClass} {...props} />;
+const VARIANT: Record<SkeletonVariant, string> = {
+  text: "h-4 rounded-sm",
+  block: "rounded-md",
+  circle: "rounded-full",
 };
 
-Skeleton.displayName = 'Skeleton';
+export function Skeleton({ variant = "block", className, ...rest }: SkeletonProps) {
+  return (
+    <div
+      aria-hidden="true"
+      className={cn("animate-pulse bg-surface-inset", VARIANT[variant], className)}
+      {...rest}
+    />
+  );
+}
+
+/** Matches the programme row so the swap to real content doesn't shift layout. */
+export function ProgramRowSkeleton() {
+  return (
+    <div className="flex items-center gap-3.5 border-b border-line px-[18px] py-[15px] last:border-0">
+      <Skeleton variant="circle" className="h-2 w-2 shrink-0" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <Skeleton variant="text" className="w-1/3" />
+        <Skeleton variant="text" className="h-3 w-1/2" />
+      </div>
+      <Skeleton variant="text" className="h-5 w-20 shrink-0" />
+    </div>
+  );
+}

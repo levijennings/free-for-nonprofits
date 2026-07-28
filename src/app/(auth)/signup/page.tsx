@@ -1,9 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import Turnstile from '@/components/Turnstile'
 
 // Captcha is active only when a site key is configured.
@@ -13,12 +11,16 @@ export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [orgName, setOrgName] = useState('')
+  const [honeypot, setHoneypot] = useState('')
   const [captchaToken, setCaptchaToken] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  const router = useRouter()
-  const supabase = createClient()
+
+  // Timestamp the form as soon as this component mounts. Bots that script-fill
+  // and submit within a second or two of hitting the page land far below
+  // MIN_FILL_TIME_MS on the server and are silently dropped.
+  const formRenderedAt = useRef(Date.now())
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,20 +33,23 @@ export default function SignupPage() {
     setLoading(true)
     setError('')
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password,
+        orgName,
+        honeypot,
+        formRenderedAt: formRenderedAt.current,
         captchaToken: captchaToken || undefined,
-        data: {
-          display_name: orgName || email.split('@')[0],
-          org_name: orgName,
-        },
-      },
+      }),
     })
 
-    if (error) {
-      setError(error.message)
+    const data = await res.json().catch(() => ({ error: 'Something went wrong. Please try again.' }))
+
+    if (!res.ok) {
+      setError(data.error || 'Something went wrong. Please try again.')
       setLoading(false)
     } else {
       setSuccess(true)
@@ -147,6 +152,28 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="At least 8 characters"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              />
+            </div>
+
+            {/*
+              Honeypot: invisible to real visitors (off-screen, unfocusable,
+              excluded from tab order and screen readers) but many bots fill
+              every field they can find in the DOM. Any value here fails the
+              signup silently server-side.
+            */}
+            <div
+              aria-hidden="true"
+              style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}
+            >
+              <label htmlFor="company_website">Company website</label>
+              <input
+                id="company_website"
+                name="company_website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
               />
             </div>
 

@@ -1,29 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { verifyTurnstile, getClientIp } from '@/lib/captcha'
 import { NextRequest, NextResponse } from 'next/server'
-
-const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY
-
-// Verifies a Cloudflare Turnstile token. If no secret is configured, captcha is
-// not active yet, so we allow the request through (form behaves as before).
-async function verifyCaptcha(token: string | undefined, ip: string | null): Promise<boolean> {
-  if (!TURNSTILE_SECRET) return true
-  if (!token) return false
-  try {
-    const form = new URLSearchParams()
-    form.append('secret', TURNSTILE_SECRET)
-    form.append('response', token)
-    if (ip) form.append('remoteip', ip)
-    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      body: form,
-    })
-    const data = (await res.json()) as { success: boolean }
-    return data.success === true
-  } catch {
-    return false
-  }
-}
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -32,8 +10,8 @@ export async function POST(request: NextRequest) {
   const body = await request.json()
   const { name, website_url, category_slug, pricing_model, description, nonprofit_deal, captchaToken } = body
 
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null
-  if (!(await verifyCaptcha(captchaToken, ip))) {
+  const ip = getClientIp(request)
+  if (!(await verifyTurnstile(captchaToken, ip))) {
     return NextResponse.json({ error: 'Captcha verification failed. Please try again.' }, { status: 400 })
   }
 

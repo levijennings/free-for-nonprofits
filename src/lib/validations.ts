@@ -42,8 +42,15 @@ export const paginationSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional().default(20),
 })
 
+export const signupSchema = z.object({
+  email: z.string().trim().email('Please enter a valid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  orgName: z.string().trim().max(200, 'Organization name must be less than 200 characters').optional().or(z.literal('')),
+})
+
 export type ToolSubmission = z.infer<typeof toolSubmissionSchema>
 export type ReviewInput = z.infer<typeof reviewSchema>
 export type ProfileUpdate = z.infer<typeof profileUpdateSchema>
 export type SearchQuery = z.infer<typeof searchSchema>
 export type Pagination = z.infer<typeof paginationSchema>
+export type SignupInput = z.infer<typeof signupSchema>

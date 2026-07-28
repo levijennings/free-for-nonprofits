@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient, isAdminEmail } from '@/lib/supabase/admin'
 import Header from '@/components/nav/Header'
 import ToolLogo from '@/components/tools/ToolLogo'
+import DeleteUserButton from '@/components/admin/DeleteUserButton'
 
 const pricingLabels: Record<string, string> = {
   free: 'Free',
@@ -60,14 +61,18 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
 
   const admin = createAdminClient()
 
+  // Auth record is the source of truth — a profile may not exist (unconfirmed
+  // / bot signups, or accounts predating a reliable profile-creation trigger).
+  const { data: authUserRes } = await admin.auth.admin.getUserById(params.id)
+  const authUser = authUserRes?.user
+  if (!authUser) notFound()
+
   // Fetch profile first
   const { data: profile } = await admin
     .from('profiles')
     .select('id, display_name, org_name, org_size, created_at')
     .eq('id', params.id)
-    .single()
-
-  if (!profile) notFound()
+    .maybeSingle()
 
   // Parallel: activity data
   const [
@@ -112,10 +117,12 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
       .limit(10),
   ])
 
-  const label    = profile.org_name || profile.display_name || 'Anonymous'
-  const initials = label.slice(0, 2).toUpperCase()
-  const daysActive = Math.floor((Date.now() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60 * 24))
+  const label       = profile?.org_name || profile?.display_name || authUser.email || 'Anonymous'
+  const initials    = label.slice(0, 2).toUpperCase()
+  const joinedAt    = profile?.created_at ?? authUser.created_at
+  const daysActive  = Math.floor((Date.now() - new Date(joinedAt).getTime()) / (1000 * 60 * 60 * 24))
   const engagementScore = (saveCount ?? 0) + (usingCount ?? 0) * 2 + (favCount ?? 0) + (reviewCount ?? 0) * 3
+  const canDelete = authUser.id !== adminUser.id && !isAdminEmail(authUser.email)
 
   // Determine activity level
   const activityLevel =
@@ -142,28 +149,45 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
           {/* Profile header */}
           <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
             <div className="flex items-start gap-5">
-              <div className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold shrink-0 ${avatarColor(profile.id)}`}>
+              <div className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold shrink-0 ${avatarColor(authUser.id)}`}>
                 {initials}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <h1 className="text-xl font-bold text-gray-900">{label}</h1>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${activityLevel.color}`}>
-                    {activityLevel.label}
-                  </span>
+                  {profile ? (
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${activityLevel.color}`}>
+                      {activityLevel.label}
+                    </span>
+                  ) : (
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-gray-100 text-gray-500">
+                      No profile
+                    </span>
+                  )}
+                  {!authUser.email_confirmed_at && (
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-amber-50 text-amber-600">
+                      Unconfirmed
+                    </span>
+                  )}
                 </div>
-                {profile.org_name && profile.display_name && (
+                {authUser.email && <p className="text-sm text-gray-500">{authUser.email}</p>}
+                {profile?.org_name && profile?.display_name && (
                   <p className="text-sm text-gray-500">{profile.display_name}</p>
                 )}
                 <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-gray-400 divide-x divide-gray-100">
-                  {profile.org_size && (
+                  {profile?.org_size && (
                     <span className="pr-3">{orgSizeLabels[profile.org_size] ?? profile.org_size}</span>
                   )}
-                  <span className={profile.org_size ? 'pl-3 pr-3' : 'pr-3'}>
-                    Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  <span className={profile?.org_size ? 'pl-3 pr-3' : 'pr-3'}>
+                    Joined {new Date(joinedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </span>
                   <span className="pl-3">
                     {daysActive === 0 ? 'Day 1' : `${daysActive}d member`}
+                  </span>
+                  <span className="pl-3">
+                    {authUser.last_sign_in_at
+                      ? `Last sign-in ${new Date(authUser.last_sign_in_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                      : 'Never signed in'}
                   </span>
                 </div>
               </div>
@@ -171,14 +195,16 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
           </div>
 
           {/* Activity stats */}
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-6">
-            <StatCard label="Saved"      value={saveCount ?? 0}              color="text-blue-600"   />
-            <StatCard label="Favorites"  value={favCount ?? 0}               color="text-rose-500"   />
-            <StatCard label="Using"      value={usingCount ?? 0}             color="text-teal-600"   />
-            <StatCard label="Reviews"    value={reviewCount ?? 0}            color="text-amber-500"  />
-            <StatCard label="Score"      value={engagementScore}             color="text-gray-700"   />
-            <StatCard label="Submitted"  value={submissions?.length ?? 0}    color="text-purple-600" />
-          </div>
+          {profile && (
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-6">
+              <StatCard label="Saved"      value={saveCount ?? 0}              color="text-blue-600"   />
+              <StatCard label="Favorites"  value={favCount ?? 0}               color="text-rose-500"   />
+              <StatCard label="Using"      value={usingCount ?? 0}             color="text-teal-600"   />
+              <StatCard label="Reviews"    value={reviewCount ?? 0}            color="text-amber-500"  />
+              <StatCard label="Score"      value={engagementScore}             color="text-gray-700"   />
+              <StatCard label="Submitted"  value={submissions?.length ?? 0}    color="text-purple-600" />
+            </div>
+          )}
 
           {/* Saved tools */}
           {(savedTools ?? []).length > 0 && (
@@ -294,7 +320,7 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
 
           {/* Submissions */}
           {(submissions ?? []).length > 0 && (
-            <section className="bg-white rounded-2xl border border-gray-100 p-5">
+            <section className="bg-white rounded-2xl border border-gray-100 p-5 mb-5">
               <h2 className="font-bold text-gray-900 mb-4">Tool submissions</h2>
               <div className="space-y-2">
                 {(submissions ?? []).map(sub => (
@@ -319,11 +345,27 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
           )}
 
           {/* Empty state */}
-          {(saveCount ?? 0) === 0 && (favCount ?? 0) === 0 && (usingCount ?? 0) === 0 && (reviewCount ?? 0) === 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center text-gray-400">
+          {profile && (saveCount ?? 0) === 0 && (favCount ?? 0) === 0 && (usingCount ?? 0) === 0 && (reviewCount ?? 0) === 0 && (submissions ?? []).length === 0 && (
+            <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center text-gray-400 mb-5">
               <p className="text-3xl mb-3">👤</p>
-              <p className="text-sm">This user hasn't interacted with any tools yet.</p>
+              <p className="text-sm">This user hasn&apos;t interacted with any tools yet.</p>
             </div>
+          )}
+
+          {!profile && (
+            <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center text-gray-400 mb-5">
+              <p className="text-3xl mb-3">👤</p>
+              <p className="text-sm">No profile was ever created for this account — it never completed signup.</p>
+            </div>
+          )}
+
+          {/* Admin actions */}
+          {canDelete && (
+            <section className="bg-white rounded-2xl border border-red-100 p-5">
+              <h2 className="font-bold text-gray-900 mb-1">Danger zone</h2>
+              <p className="text-xs text-gray-400 mb-3">Permanently remove this account.</p>
+              <DeleteUserButton userId={authUser.id} label={authUser.email ?? label} />
+            </section>
           )}
 
         </div>

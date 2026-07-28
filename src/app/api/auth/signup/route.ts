@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createAdminClient, ADMIN_EMAILS } from '@/lib/supabase/admin'
 import { verifyTurnstile, getClientIp } from '@/lib/captcha'
 import { signupSchema } from '@/lib/validations'
+import { sendNewSignupAdminEmail } from '@/lib/email'
 
 // How many signups a single IP may attempt before being throttled.
 const MAX_ATTEMPTS_PER_HOUR = 5
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
   // own auth flow — including the confirmation email — behaves exactly as
   // before. ----
   const supabase = await createClient()
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
@@ -84,5 +85,20 @@ export async function POST(request: NextRequest) {
   })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+  // ---- Notify admins of the new signup. Best-effort: a failure here should
+  // never surface as a signup failure to the user. ----
+  try {
+    await sendNewSignupAdminEmail({
+      toEmails: ADMIN_EMAILS,
+      email: parsed.data.email,
+      orgName: parsed.data.orgName || null,
+      ip,
+      userId: data.user?.id ?? null,
+    })
+  } catch (e) {
+    console.error('Failed to send new-signup admin notification:', e)
+  }
+
   return NextResponse.json({ ok: true })
 }

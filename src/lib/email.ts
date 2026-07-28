@@ -4,6 +4,62 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = process.env.RESEND_FROM_EMAIL ?? 'Free For NonProfits <hello@freefornonprofits.org>'
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://free-for-nonprofits.vercel.app'
 
+// ── New signup admin notification ─────────────────────────────────────────────
+
+export async function sendNewSignupAdminEmail({
+  toEmails,
+  email,
+  orgName,
+  ip,
+  userId,
+}: {
+  toEmails: string[]
+  email: string
+  orgName: string | null
+  ip: string
+  userId: string | null
+}) {
+  const adminUrl = userId ? `${BASE_URL}/admin/users/${userId}` : `${BASE_URL}/admin/users`
+
+  await resend.emails.send({
+    from: FROM,
+    to: toEmails,
+    subject: `New signup: ${orgName || email}`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:16px;border:1px solid #e5e7eb;overflow:hidden;">
+
+    <div style="background:linear-gradient(135deg,#0f172a,#16a34a);padding:28px 32px;">
+      <p style="margin:0;font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:0.15em;text-transform:uppercase;">Free For NonProfits · Admin</p>
+      <h1 style="margin:8px 0 0;font-size:22px;font-weight:800;color:#fff;">New user signed up</h1>
+    </div>
+
+    <div style="padding:32px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;color:#374151;">
+        <tr><td style="padding:6px 0;color:#6b7280;width:110px;">Email</td><td style="padding:6px 0;font-weight:600;color:#111827;">${email}</td></tr>
+        ${orgName ? `<tr><td style="padding:6px 0;color:#6b7280;">Organization</td><td style="padding:6px 0;font-weight:600;color:#111827;">${orgName}</td></tr>` : ''}
+        <tr><td style="padding:6px 0;color:#6b7280;">IP address</td><td style="padding:6px 0;font-family:monospace;color:#111827;">${ip}</td></tr>
+      </table>
+
+      <a href="${adminUrl}" style="display:inline-block;margin-top:24px;background:#16a34a;color:#fff;font-size:14px;font-weight:700;padding:12px 24px;border-radius:10px;text-decoration:none;">
+        View in admin →
+      </a>
+    </div>
+
+    <div style="padding:20px 32px;border-top:1px solid #f3f4f6;background:#f9fafb;">
+      <p style="margin:0;font-size:12px;color:#9ca3af;">
+        Free For NonProfits · sent because a new account was just created.
+      </p>
+    </div>
+  </div>
+</body>
+</html>`,
+  })
+}
+
 // ── New matching tool notification ────────────────────────────────────────────
 
 export async function sendNewToolMatchEmail({

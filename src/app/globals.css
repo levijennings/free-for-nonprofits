@@ -1,31 +1,178 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #111827;
-}
+/* ============================================================================
+   DESIGN TOKENS
+   Semantic, theme-aware, and the single source of truth for colour, elevation,
+   radius and motion. Components consume these through Tailwind utilities
+   (bg-surface, text-fg-muted, rounded-md, ...) and never hardcode a hex.
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+   Values are HSL channels with no hsl() wrapper so Tailwind can apply opacity
+   modifiers: `bg-accent/10` resolves to hsl(var(--accent) / 0.1).
+   ========================================================================== */
+
+@layer base {
+  :root {
+    /* surfaces */
+    --surface:            0 0% 100%;
+    --surface-subtle:     220 20% 97%;
+    --surface-raised:     0 0% 100%;
+    --surface-inset:      220 17% 95%;
+
+    /* lines */
+    --border:             220 15% 89%;
+    --border-strong:      220 13% 80%;
+
+    /* text — every value below clears 4.5:1 on --surface */
+    --fg:                 220 22% 10%;
+    --fg-muted:           220 11% 40%;
+    --fg-subtle:          220 9% 46%;
+
+    /* accent — value / claimable.
+       Was brand-500 (#10B981) at 2.54:1 for white-on-fill, which failed WCAG
+       at every level. #047857 is 5.5:1. Hover always darkens, never lightens. */
+    --accent:             162 94% 24%;
+    --accent-hover:       164 95% 19%;
+    --accent-fg:          0 0% 100%;
+    --accent-subtle:      158 60% 96%;
+    --accent-line:        160 45% 82%;
+
+    /* status */
+    --status-none:        220 9% 46%;
+    --status-progress:    32 81% 37%;
+    --status-done:        162 94% 24%;
+    --status-warn:        4 74% 40%;
+    --status-progress-bg: 40 90% 96%;
+    --status-done-bg:     158 60% 96%;
+    --status-warn-bg:     0 86% 97%;
+
+    /* focus — must clear 3:1 against every surface it lands on (SC 1.4.11) */
+    --focus:              224 76% 46%;
+
+    /* elevation — three, not nine */
+    --shadow-1: 0 1px 2px 0 hsl(220 43% 11% / .05);
+    --shadow-2: 0 4px 14px -2px hsl(220 43% 11% / .08);
+    --shadow-3: 0 18px 44px -10px hsl(220 43% 11% / .18);
+  }
+
+  [data-theme='dark'],
+  .dark {
+    --surface:            220 26% 7%;
+    --surface-subtle:     220 22% 10%;
+    --surface-raised:     220 20% 12%;
+    --surface-inset:      220 18% 15%;
+
+    --border:             220 16% 19%;
+    --border-strong:      220 12% 30%;
+
+    --fg:                 220 25% 95%;
+    --fg-muted:           220 13% 70%;
+    --fg-subtle:          220 10% 62%;
+
+    --accent:             162 62% 45%;
+    --accent-hover:       162 66% 54%;
+    --accent-fg:          160 60% 6%;
+    --accent-subtle:      165 45% 11%;
+    --accent-line:        163 43% 20%;
+
+    --status-none:        220 9% 55%;
+    --status-progress:    36 68% 62%;
+    --status-done:        162 62% 45%;
+    --status-warn:        6 78% 72%;
+    --status-progress-bg: 34 40% 12%;
+    --status-done-bg:     165 45% 11%;
+    --status-warn-bg:     4 40% 12%;
+
+    --focus:              219 100% 71%;
+
+    --shadow-1: 0 1px 2px 0 hsl(0 0% 0% / .4);
+    --shadow-2: 0 4px 14px -2px hsl(0 0% 0% / .5);
+    --shadow-3: 0 18px 44px -10px hsl(0 0% 0% / .7);
+  }
+
+  /* System preference, unless the user has explicitly chosen light. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --surface:            220 26% 7%;
+      --surface-subtle:     220 22% 10%;
+      --surface-raised:     220 20% 12%;
+      --surface-inset:      220 18% 15%;
+      --border:             220 16% 19%;
+      --border-strong:      220 12% 30%;
+      --fg:                 220 25% 95%;
+      --fg-muted:           220 13% 70%;
+      --fg-subtle:          220 10% 62%;
+      --accent:             162 62% 45%;
+      --accent-hover:       162 66% 54%;
+      --accent-fg:          160 60% 6%;
+      --accent-subtle:      165 45% 11%;
+      --accent-line:        163 43% 20%;
+      --status-none:        220 9% 55%;
+      --status-progress:    36 68% 62%;
+      --status-done:        162 62% 45%;
+      --status-warn:        6 78% 72%;
+      --status-progress-bg: 34 40% 12%;
+      --status-done-bg:     165 45% 11%;
+      --status-warn-bg:     4 40% 12%;
+      --focus:              219 100% 71%;
+      --shadow-1: 0 1px 2px 0 hsl(0 0% 0% / .4);
+      --shadow-2: 0 4px 14px -2px hsl(0 0% 0% / .5);
+      --shadow-3: 0 18px 44px -10px hsl(0 0% 0% / .7);
+    }
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Body was 14px by convention across the app. Long-form claim guides at
+     that size are punishing on a phone, and this audience skews older than a
+     developer-tools audience. */
+  body {
+    @apply bg-surface text-fg;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  /* Keyboard-only focus. Previously `focus:outline-none` appeared 23 times
+     and `focus-visible` 4 times, all of them in dead code. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--focus));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: hsl(var(--accent) / 0.18);
+  }
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .text-balance { text-wrap: balance; }
+  .text-pretty  { text-wrap: pretty; }
+
+  /* Money, counts and durations. Tabular figures so columns align, and so a
+     number reads as a computed result rather than a marketing claim. */
+  .tnum {
+    font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
   }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+}
+
+/* Respect the OS setting. Previously unhandled anywhere in the app. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

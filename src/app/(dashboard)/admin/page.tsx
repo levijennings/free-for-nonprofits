@@ -11,15 +11,15 @@ import FulfillRequestButton from '@/components/admin/FulfillRequestButton'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-function StatCard({ label, value, sub, color = 'text-gray-900', href }: {
+function StatCard({ label, value, sub, color = 'text-fg', href }: {
   label: string; value: string | number; sub?: string; color?: string; href?: string
 }) {
   const inner = (
-    <div className={`bg-white rounded-2xl border border-gray-100 p-5 transition-all ${href ? 'hover:border-brand-200 hover:shadow-sm cursor-pointer group' : ''}`}>
-      <p className={`text-3xl font-bold ${color} ${href ? 'group-hover:opacity-80' : ''}`}>{value}</p>
-      <p className="text-sm text-gray-500 mt-1">{label}</p>
-      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
-      {href && <p className="text-xs text-brand-500 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">View all →</p>}
+    <div className={`bg-surface rounded-2xl border border-line p-5 transition-all ${href ? 'hover:border-accent-line hover:shadow-1 cursor-pointer group' : ''}`}>
+      <p className={`text-3xl font-bold tnum ${color} ${href ? 'group-hover:opacity-80' : ''}`}>{value}</p>
+      <p className="text-sm text-fg-subtle mt-1">{label}</p>
+      {sub && <p className="text-xs text-fg-subtle mt-0.5">{sub}</p>}
+      {href && <p className="text-xs text-accent mt-2 opacity-0 group-hover:opacity-100 transition-opacity">View all →</p>}
     </div>
   )
   return href ? <Link href={href}>{inner}</Link> : inner
@@ -135,7 +135,7 @@ export default async function AdminPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-surface-subtle">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
           {/* Header */}
@@ -144,11 +144,11 @@ export default async function AdminPage() {
               <div className="inline-flex items-center gap-2 bg-red-100 text-red-700 text-xs font-bold px-3 py-1 rounded-full mb-2 uppercase tracking-widest">
                 🔒 Admin
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+              <h1 className="text-3xl font-bold text-fg">Dashboard</h1>
             </div>
             <div className="flex items-center gap-4">
-              <a href="/gtm-brief.html" target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-brand-600 hover:text-brand-800 transition-colors">📣 Go-to-Market brief →</a>
-              <Link href="/dashboard" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+              <a href="/gtm-brief.html" target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-accent hover:text-accent-hover transition-colors">📣 Go-to-Market brief →</a>
+              <Link href="/dashboard" className="text-sm text-fg-subtle hover:text-fg transition-colors">
                 ← Back to user view
               </Link>
             </div>
@@ -156,14 +156,14 @@ export default async function AdminPage() {
 
           {/* KPI grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4 mb-10">
-            <StatCard label="Verified tools" value={toolCount ?? 0} color="text-brand-600" href="/admin/tools" />
+            <StatCard label="Verified tools" value={toolCount ?? 0} color="text-accent" href="/admin/tools" />
             <StatCard label="Total users" value={userCount ?? 0} sub={`+${newUsersThisWeek?.length ?? 0} this week`} color="text-purple-600" href="/admin/users" />
             <StatCard label="Reviews written" value={reviewCount ?? 0} color="text-amber-500" href="/admin/tools?sort=reviews" />
-            <StatCard label="Pending submissions" value={pendingCount ?? 0} color={pendingCount ? 'text-red-500' : 'text-gray-400'} />
+            <StatCard label="Pending submissions" value={pendingCount ?? 0} color={pendingCount ? 'text-red-500' : 'text-fg-subtle'} />
             <StatCard label="Total saves" value={totalSaves} color="text-blue-600" href="/admin/tools?sort=saves" />
             <StatCard label="'I use this' clicks" value={totalUsing} color="text-teal-600" href="/admin/tools?sort=using" />
             <StatCard label="Favorites" value={totalFavs} color="text-rose-500" href="/admin/tools?sort=saves" />
-            <StatCard label="Engagement score" value={totalSaves + totalUsing * 2 + totalFavs + (reviewCount ?? 0) * 3} sub="saves + 2×using + favs + 3×reviews" color="text-gray-700" />
+            <StatCard label="Engagement score" value={totalSaves + totalUsing * 2 + totalFavs + (reviewCount ?? 0) * 3} sub="saves + 2×using + favs + 3×reviews" color="text-fg-muted" />
           </div>
 
           {/* Monthly insights (mirrors the monthly email report) */}
@@ -179,47 +179,47 @@ export default async function AdminPage() {
             const delta = (c: number, p: number) =>
               p === 0 ? (c > 0 ? '▲ new' : '—') : `${c >= p ? '▲' : '▼'} ${Math.abs(Math.round(((c - p) / p) * 100))}%`
             return (
-              <section className="bg-white rounded-2xl border border-gray-100 p-6 mb-10">
+              <section className="bg-surface rounded-2xl border border-line p-6 mb-10">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-gray-900">📈 Monthly Insights — {m.month_label}</h2>
-                  <span className="text-xs text-gray-400">vs. previous month</span>
+                  <h2 className="text-lg font-bold text-fg">📈 Monthly Insights — {m.month_label}</h2>
+                  <span className="text-xs text-fg-subtle">vs. previous month</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <p className="text-xs text-gray-500">Tools added</p>
-                    <p className="text-2xl font-bold text-gray-900">{m.items_added.this_month}</p>
-                    <p className="text-xs text-gray-400">prev {m.items_added.prev_month} · {delta(m.items_added.this_month, m.items_added.prev_month)}</p>
+                  <div className="bg-surface-subtle rounded-xl p-4">
+                    <p className="text-xs text-fg-subtle">Tools added</p>
+                    <p className="text-2xl font-bold text-fg tnum">{m.items_added.this_month}</p>
+                    <p className="text-xs text-fg-subtle tnum">prev {m.items_added.prev_month} · {delta(m.items_added.this_month, m.items_added.prev_month)}</p>
                   </div>
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <p className="text-xs text-gray-500">New users</p>
-                    <p className="text-2xl font-bold text-gray-900">{m.new_users.this_month}</p>
-                    <p className="text-xs text-gray-400">prev {m.new_users.prev_month} · {delta(m.new_users.this_month, m.new_users.prev_month)}</p>
+                  <div className="bg-surface-subtle rounded-xl p-4">
+                    <p className="text-xs text-fg-subtle">New users</p>
+                    <p className="text-2xl font-bold text-fg tnum">{m.new_users.this_month}</p>
+                    <p className="text-xs text-fg-subtle tnum">prev {m.new_users.prev_month} · {delta(m.new_users.this_month, m.new_users.prev_month)}</p>
                   </div>
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <p className="text-xs text-gray-500">Active users (30d)</p>
-                    <p className="text-2xl font-bold text-gray-900">{m.active_users_30d}</p>
-                    <p className="text-xs text-gray-400">saves / favs / uses / reviews / logins</p>
+                  <div className="bg-surface-subtle rounded-xl p-4">
+                    <p className="text-xs text-fg-subtle">Active users (30d)</p>
+                    <p className="text-2xl font-bold text-fg tnum">{m.active_users_30d}</p>
+                    <p className="text-xs text-fg-subtle">saves / favs / uses / reviews / logins</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Top tools by saves</p>
+                    <p className="text-micro text-fg-subtle uppercase mb-2">Top tools by saves</p>
                     <ol className="space-y-1.5">
                       {m.top_tools.map((t, i) => (
                         <li key={t.slug} className="flex justify-between text-sm">
-                          <span className="text-gray-700">{i + 1}. {t.name}</span>
-                          <span className="text-gray-400">{t.save_count}</span>
+                          <span className="text-fg-muted">{i + 1}. {t.name}</span>
+                          <span className="text-fg-subtle tnum">{t.save_count}</span>
                         </li>
                       ))}
                     </ol>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Top categories</p>
+                    <p className="text-micro text-fg-subtle uppercase mb-2">Top categories</p>
                     <ol className="space-y-1.5">
                       {m.top_categories.map((c, i) => (
                         <li key={c.name} className="flex justify-between text-sm">
-                          <span className="text-gray-700">{i + 1}. {c.name}</span>
-                          <span className="text-gray-400">{c.tool_count}</span>
+                          <span className="text-fg-muted">{i + 1}. {c.name}</span>
+                          <span className="text-fg-subtle tnum">{c.tool_count}</span>
                         </li>
                       ))}
                     </ol>
@@ -230,15 +230,15 @@ export default async function AdminPage() {
           })()}
 
           {/* Analytics overview (embedded) */}
-          <section className="bg-white rounded-2xl border border-gray-100 p-6 mb-10">
+          <section className="bg-surface rounded-2xl border border-line p-6 mb-10">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">📊 Analytics overview</h2>
+              <h2 className="text-lg font-bold text-fg">📊 Analytics overview</h2>
               {process.env.NEXT_PUBLIC_GA_ID
-                ? <span className="text-xs font-semibold text-brand-600">GA4 connected</span>
-                : <span className="text-xs text-gray-400">GA4 not configured</span>}
+                ? <span className="text-xs font-semibold text-accent">GA4 connected</span>
+                : <span className="text-xs text-fg-subtle">GA4 not configured</span>}
             </div>
             {process.env.NEXT_PUBLIC_ANALYTICS_EMBED_URL ? (
-              <div className="rounded-xl overflow-hidden border border-gray-100">
+              <div className="rounded-xl overflow-hidden border border-line">
                 <iframe
                   src={process.env.NEXT_PUBLIC_ANALYTICS_EMBED_URL}
                   title="Analytics dashboard"
@@ -249,13 +249,13 @@ export default async function AdminPage() {
                 />
               </div>
             ) : (
-              <div className="bg-gray-50 rounded-xl p-6 text-sm text-gray-600">
-                <p className="font-semibold text-gray-900 mb-2">Embed your live analytics dashboard here</p>
+              <div className="bg-surface-subtle rounded-xl p-6 text-sm text-fg-muted">
+                <p className="font-semibold text-fg mb-2">Embed your live analytics dashboard here</p>
                 <ol className="list-decimal ml-5 space-y-1">
-                  <li>Set <code className="bg-gray-100 px-1 rounded">NEXT_PUBLIC_GA_ID</code> (your <code className="bg-gray-100 px-1 rounded">G-XXXXXXXXXX</code> Measurement ID) in Vercel to start collecting data.</li>
-                  <li>In <a className="text-brand-600 font-medium" href="https://lookerstudio.google.com" target="_blank" rel="noopener noreferrer">Looker Studio</a>, create a report from your GA4 property (or use the GA4 template).</li>
+                  <li>Set <code className="bg-surface-inset px-1 rounded">NEXT_PUBLIC_GA_ID</code> (your <code className="bg-surface-inset px-1 rounded">G-XXXXXXXXXX</code> Measurement ID) in Vercel to start collecting data.</li>
+                  <li>In <a className="text-accent font-medium" href="https://lookerstudio.google.com" target="_blank" rel="noopener noreferrer">Looker Studio</a>, create a report from your GA4 property (or use the GA4 template).</li>
                   <li>Share → Embed report → enable embedding → copy the embed URL.</li>
-                  <li>Set it as <code className="bg-gray-100 px-1 rounded">NEXT_PUBLIC_ANALYTICS_EMBED_URL</code> in Vercel and redeploy.</li>
+                  <li>Set it as <code className="bg-surface-inset px-1 rounded">NEXT_PUBLIC_ANALYTICS_EMBED_URL</code> in Vercel and redeploy.</li>
                 </ol>
               </div>
             )}
@@ -279,50 +279,50 @@ export default async function AdminPage() {
               return parts.join(' · ') || '—'
             }
             return (
-              <section className="bg-white rounded-2xl border border-gray-100 p-6 mb-10">
+              <section className="bg-surface rounded-2xl border border-line p-6 mb-10">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-gray-900">🤖 Growth Agent</h2>
-                  <span className="text-xs text-gray-400">finds &amp; stages new tools for your approval</span>
+                  <h2 className="text-lg font-bold text-fg">🤖 Growth Agent</h2>
+                  <span className="text-xs text-fg-subtle">finds &amp; stages new tools for your approval</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <p className="text-xs text-gray-500">Schedule</p>
-                    <p className="text-sm font-bold text-gray-900 mt-1">Sundays 7:00 AM PT</p>
-                    <p className="text-xs text-gray-400 mt-0.5">+ monthly report on the 1st</p>
+                  <div className="bg-surface-subtle rounded-xl p-4">
+                    <p className="text-xs text-fg-subtle">Schedule</p>
+                    <p className="text-sm font-bold text-fg mt-1">Sundays 7:00 AM PT</p>
+                    <p className="text-xs text-fg-subtle mt-0.5">+ monthly report on the 1st</p>
                   </div>
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <p className="text-xs text-gray-500">Next run</p>
-                    <p className="text-sm font-bold text-gray-900 mt-1">{nextSun.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">research → stage → digest</p>
+                  <div className="bg-surface-subtle rounded-xl p-4">
+                    <p className="text-xs text-fg-subtle">Next run</p>
+                    <p className="text-sm font-bold text-fg mt-1">{nextSun.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                    <p className="text-xs text-fg-subtle mt-0.5">research → stage → digest</p>
                   </div>
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <p className="text-xs text-gray-500">Total runs</p>
-                    <p className="text-2xl font-bold text-gray-900">{runs.length}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{last ? `last ${new Date(last.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : 'none yet'}</p>
+                  <div className="bg-surface-subtle rounded-xl p-4">
+                    <p className="text-xs text-fg-subtle">Total runs</p>
+                    <p className="text-2xl font-bold text-fg tnum">{runs.length}</p>
+                    <p className="text-xs text-fg-subtle mt-0.5">{last ? `last ${new Date(last.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : 'none yet'}</p>
                   </div>
-                  <div className="bg-brand-50 rounded-xl p-4">
-                    <p className="text-xs text-brand-700">Awaiting approval</p>
-                    <p className="text-2xl font-bold text-brand-700">{pendingCount ?? 0}</p>
-                    <p className="text-xs text-brand-600 mt-0.5">staged tools to review</p>
+                  <div className="bg-accent-subtle rounded-xl p-4">
+                    <p className="text-xs text-accent">Awaiting approval</p>
+                    <p className="text-2xl font-bold text-accent tnum">{pendingCount ?? 0}</p>
+                    <p className="text-xs text-accent mt-0.5">staged tools to review</p>
                   </div>
                 </div>
                 {runs.length === 0 ? (
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-fg-subtle">
                     No agent runs yet — the first run is scheduled for {nextSun.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}. Tools it finds will appear in the Submissions queue below for your approval.
                   </p>
                 ) : (
                   <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Recent activity</p>
+                    <p className="text-micro text-fg-subtle uppercase mb-2">Recent activity</p>
                     <table className="w-full text-sm">
                       <tbody>
                         {runs.map((r) => (
-                          <tr key={r.id} className="border-b border-gray-100">
-                            <td className="py-2 pr-3 text-gray-700">{kindLabel[r.kind] ?? r.kind}</td>
+                          <tr key={r.id} className="border-b border-line">
+                            <td className="py-2 pr-3 text-fg-muted">{kindLabel[r.kind] ?? r.kind}</td>
                             <td className="py-2 pr-3">
-                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${r.status === 'success' ? 'bg-green-100 text-green-700' : r.status === 'error' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'}`}>{r.status}</span>
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${r.status === 'success' ? 'bg-green-100 text-green-700' : r.status === 'error' ? 'bg-red-100 text-red-700' : 'bg-surface-inset text-fg-muted'}`}>{r.status}</span>
                             </td>
-                            <td className="py-2 pr-3 text-gray-500">{fmtSummary(r)}</td>
-                            <td className="py-2 text-right text-gray-400 text-xs">{new Date(r.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</td>
+                            <td className="py-2 pr-3 text-fg-subtle">{fmtSummary(r)}</td>
+                            <td className="py-2 text-right text-fg-subtle text-xs">{new Date(r.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -339,28 +339,28 @@ export default async function AdminPage() {
             <div className="lg:col-span-2 space-y-8">
 
               {/* Resource of the week */}
-              <section className="bg-white rounded-2xl border border-gray-100 p-6">
+              <section className="bg-surface rounded-2xl border border-line p-6">
                 <div className="flex items-center justify-between mb-5">
-                  <h2 className="text-lg font-bold text-gray-900">⭐ Resource of the Week</h2>
+                  <h2 className="text-lg font-bold text-fg">⭐ Resource of the Week</h2>
                   {currentRotw && (
-                    <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-3 py-1">
+                    <span className="text-xs text-fg-subtle bg-surface-inset rounded-full px-3 py-1">
                       Current: week of {new Date(currentRotw.week_start + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                   )}
                 </div>
                 {currentRotw && rotwTool && (
-                  <div className="mb-6 bg-brand-50 border border-brand-100 rounded-xl px-4 py-3 flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-white border border-gray-100 flex items-center justify-center shrink-0">
+                  <div className="mb-6 bg-accent-subtle border border-accent-line rounded-xl px-4 py-3 flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-surface border border-line flex items-center justify-center shrink-0">
                       {rotwTool.logo_url
                         ? <img src={rotwTool.logo_url} alt={rotwTool.name} className="w-7 h-7 object-contain" />
                         : <span className="text-lg">🛠</span>
                       }
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900">{rotwTool.name}</p>
-                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{currentRotw.blurb}</p>
+                      <p className="font-semibold text-fg">{rotwTool.name}</p>
+                      <p className="text-xs text-fg-subtle mt-0.5 line-clamp-2">{currentRotw.blurb}</p>
                     </div>
-                    <Link href={`/tools/${rotwTool.slug}`} className="text-xs text-brand-600 hover:underline shrink-0">View →</Link>
+                    <Link href={`/tools/${rotwTool.slug}`} className="text-xs text-accent hover:underline shrink-0">View →</Link>
                   </div>
                 )}
                 <SetRotwForm
@@ -369,9 +369,9 @@ export default async function AdminPage() {
               </section>
 
               {/* Submissions */}
-              <section className="bg-white rounded-2xl border border-gray-100 p-6">
+              <section className="bg-surface rounded-2xl border border-line p-6">
                 <div className="flex items-center gap-3 mb-5">
-                  <h2 className="text-lg font-bold text-gray-900">Tool Submissions</h2>
+                  <h2 className="text-lg font-bold text-fg">Tool Submissions</h2>
                   {(pendingCount ?? 0) > 0 && (
                     <span className="bg-red-100 text-red-600 text-xs font-bold px-2.5 py-0.5 rounded-full">
                       {pendingCount} pending
@@ -382,43 +382,43 @@ export default async function AdminPage() {
               </section>
 
               {/* Community Wishlist */}
-              <section className="bg-white rounded-2xl border border-gray-100 p-6">
+              <section className="bg-surface rounded-2xl border border-line p-6">
                 <div className="flex items-center justify-between mb-5">
-                  <h2 className="text-lg font-bold text-gray-900">🗳️ Community Wishlist</h2>
-                  <Link href="/wishlist" target="_blank" className="text-xs text-brand-500 hover:text-brand-700 font-medium">
+                  <h2 className="text-lg font-bold text-fg">🗳️ Community Wishlist</h2>
+                  <Link href="/wishlist" target="_blank" className="text-xs text-accent hover:text-accent-hover font-medium">
                     View public page →
                   </Link>
                 </div>
                 {(topRequests ?? []).length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-6">No requests yet.</p>
+                  <p className="text-sm text-fg-subtle text-center py-6">No requests yet.</p>
                 ) : (
                   <div className="space-y-3">
                     {(topRequests ?? []).map((req, i) => (
                       <div key={req.id} className="flex items-start gap-3">
                         <div className="flex flex-col items-center gap-0.5 shrink-0 pt-0.5">
                           <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm ${
-                            req.status === 'fulfilled' ? 'bg-green-100 text-green-700' : 'bg-brand-50 text-brand-700'
+                            req.status === 'fulfilled' ? 'bg-status-done-bg text-status-done' : 'bg-accent-subtle text-accent'
                           }`}>
                             {req.vote_count}
                           </div>
-                          <span className="text-[9px] text-gray-400 font-medium">votes</span>
+                          <span className="text-[9px] text-fg-subtle font-medium">votes</span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             {i < 3 && req.status === 'open' && (
                               <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">#{i+1}</span>
                             )}
-                            <span className="text-sm font-semibold text-gray-900">{req.name}</span>
+                            <span className="text-sm font-semibold text-fg">{req.name}</span>
                             <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
                               req.status === 'fulfilled' ? 'bg-green-100 text-green-700' :
-                              req.status === 'declined'  ? 'bg-gray-100 text-gray-500' :
+                              req.status === 'declined'  ? 'bg-surface-inset text-fg-muted' :
                               'bg-blue-100 text-blue-700'
                             }`}>
                               {req.status === 'fulfilled' ? 'Added ✓' : req.status === 'declined' ? 'Declined' : 'Open'}
                             </span>
                           </div>
                           {req.category_slug && (
-                            <p className="text-xs text-gray-400 mt-0.5">{req.category_slug.replace(/-/g, ' ')}</p>
+                            <p className="text-xs text-fg-subtle mt-0.5">{req.category_slug.replace(/-/g, ' ')}</p>
                           )}
                           {req.status === 'open' && (
                             <FulfillRequestButton requestId={req.id} requestName={req.name} />
@@ -435,55 +435,55 @@ export default async function AdminPage() {
             <div className="space-y-6">
 
               {/* Top tools */}
-              <div className="bg-white rounded-2xl border border-gray-100 p-5">
+              <div className="bg-surface rounded-2xl border border-line p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-gray-900">Top tools by saves</h3>
-                  <Link href="/admin/tools" className="text-xs text-brand-500 hover:text-brand-700 font-medium">View all →</Link>
+                  <h3 className="font-bold text-fg">Top tools by saves</h3>
+                  <Link href="/admin/tools" className="text-xs text-accent hover:text-accent-hover font-medium">View all →</Link>
                 </div>
                 <div className="space-y-2">
                   {(topTools ?? []).map((tool, i) => (
-                    <Link key={tool.id} href={`/admin/tools/${tool.slug}`} className="flex items-center gap-3 group hover:bg-gray-50 -mx-2 px-2 py-1 rounded-lg transition-colors">
-                      <span className="text-xs font-bold text-gray-300 w-4 shrink-0">{i + 1}</span>
+                    <Link key={tool.id} href={`/admin/tools/${tool.slug}`} className="flex items-center gap-3 group hover:bg-surface-subtle -mx-2 px-2 py-1 rounded-lg transition-colors">
+                      <span className="text-xs font-bold text-fg-subtle tnum w-4 shrink-0">{i + 1}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 group-hover:text-brand-600 transition-colors truncate">
+                        <p className="text-sm font-medium text-fg group-hover:text-accent transition-colors truncate">
                           {tool.name}
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-fg-subtle">
                           {tool.save_count} saved · {tool.using_count} using
                           {tool.review_count > 0 && ` · ★${Number(tool.rating_avg).toFixed(1)} (${tool.review_count})`}
                         </p>
                       </div>
-                      <span className="text-gray-200 group-hover:text-brand-400 transition-colors text-xs">→</span>
+                      <span className="text-line-strong group-hover:text-accent transition-colors text-xs">→</span>
                     </Link>
                   ))}
                 </div>
               </div>
 
               {/* Recent users */}
-              <div className="bg-white rounded-2xl border border-gray-100 p-5">
+              <div className="bg-surface rounded-2xl border border-line p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-gray-900">Recent users</h3>
-                  <Link href="/admin/users" className="text-xs text-brand-500 hover:text-brand-700 font-medium">View all →</Link>
+                  <h3 className="font-bold text-fg">Recent users</h3>
+                  <Link href="/admin/users" className="text-xs text-accent hover:text-accent-hover font-medium">View all →</Link>
                 </div>
                 <div className="space-y-3">
                   {(users ?? []).slice(0, 15).map(u => {
                     const daysAgo = Math.floor((Date.now() - new Date(u.created_at).getTime()) / (1000 * 60 * 60 * 24))
                     return (
-                      <Link key={u.id} href={`/admin/users/${u.id}`} className="flex items-start gap-2.5 group hover:bg-gray-50 -mx-2 px-2 py-1 rounded-lg transition-colors">
-                        <div className="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold shrink-0 group-hover:bg-brand-200 transition-colors">
+                      <Link key={u.id} href={`/admin/users/${u.id}`} className="flex items-start gap-2.5 group hover:bg-surface-subtle -mx-2 px-2 py-1 rounded-lg transition-colors">
+                        <div className="w-7 h-7 rounded-full bg-accent-subtle text-accent flex items-center justify-center text-xs font-bold shrink-0 group-hover:bg-accent-line transition-colors">
                           {(u.display_name || u.org_name || 'A').slice(0, 1).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 group-hover:text-brand-600 transition-colors truncate">{u.org_name || u.display_name || 'Anonymous'}</p>
-                          <p className="text-xs text-gray-400">{daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : `${daysAgo}d ago`}</p>
+                          <p className="text-sm font-medium text-fg group-hover:text-accent transition-colors truncate">{u.org_name || u.display_name || 'Anonymous'}</p>
+                          <p className="text-xs text-fg-subtle">{daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : `${daysAgo}d ago`}</p>
                         </div>
-                        <span className="text-gray-200 group-hover:text-brand-400 transition-colors text-xs self-center">→</span>
+                        <span className="text-line-strong group-hover:text-accent transition-colors text-xs self-center">→</span>
                       </Link>
                     )
                   })}
                 </div>
                 {(users?.length ?? 0) > 15 && (
-                  <Link href="/admin/users" className="block text-xs text-brand-500 hover:text-brand-700 mt-3 text-center font-medium">
+                  <Link href="/admin/users" className="block text-xs text-accent hover:text-accent-hover mt-3 text-center font-medium">
                     + {(users?.length ?? 0) - 15} more users →
                   </Link>
                 )}

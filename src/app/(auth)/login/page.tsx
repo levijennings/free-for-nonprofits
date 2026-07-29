@@ -13,11 +13,11 @@ export default function LoginPage({ searchParams }: Props) {
   const errorType = searchParams.error === '1' ? 'invalid' : searchParams.error
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-surface-subtle flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shadow-sm shrink-0">
+            <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shadow-1 shrink-0">
               <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
                 <path
                   fillRule="evenodd"
@@ -28,41 +28,43 @@ export default function LoginPage({ searchParams }: Props) {
               </svg>
             </div>
             <div className="leading-none text-left">
-              <div className="text-[9px] font-bold text-gray-400 tracking-[0.18em] uppercase">Free For</div>
-              <div className="text-[17px] font-extrabold tracking-tight text-gray-900 -mt-0.5">
-                Non<span className="text-brand-600">Profits</span>
+              <div className="text-[9px] font-bold text-fg-subtle tracking-[0.18em] uppercase">Free For</div>
+              <div className="text-[17px] font-extrabold tracking-tight text-fg -mt-0.5">
+                Non<span className="text-accent">Profits</span>
               </div>
             </div>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>
-          <p className="mt-2 text-gray-500">Sign in to your account</p>
+          <h1 className="text-3xl font-bold text-fg">Welcome back</h1>
+          <p className="mt-2 text-fg-muted">Sign in to your account</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="bg-surface rounded-2xl shadow-1 border border-line p-8">
           <form action={login} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-fg mb-1.5">Email</label>
               <input
                 type="email"
                 name="email"
                 required
+                autoComplete="email"
                 placeholder="you@yournonprofit.org"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-gray-700">Password</label>
-                <Link href="/reset-password" className="text-xs text-brand-500 hover:text-brand-700 transition-colors">
+                <label className="block text-sm font-medium text-fg">Password</label>
+                <Link href="/reset-password" className="text-xs text-accent hover:text-accent-hover transition-colors">
                   Forgot password?
                 </Link>
               </div>
               <PasswordInput
                 name="password"
                 required
+                autoComplete="current-password"
                 placeholder="••••••••"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
               />
             </div>
 
@@ -74,25 +76,32 @@ export default function LoginPage({ searchParams }: Props) {
 
             <button
               type="submit"
-              className="w-full py-3 bg-brand-500 hover:bg-brand-700 text-white font-semibold rounded-lg transition-colors"
+              className="w-full py-3 bg-accent hover:bg-accent-hover text-accent-fg font-semibold rounded-lg transition-colors"
             >
               Sign in
             </button>
           </form>
 
-          {errorType === 'unconfirmed' && (
+          {/* Both of these end in the same place — the user needs a fresh
+              confirmation link — so both get the resend form rather than an
+              unexplained empty login form. /auth/callback redirects here with
+              ?error=auth_callback_failed when the code exchange fails, which
+              in practice means the link was expired or already used. */}
+          {(errorType === 'unconfirmed' || errorType === 'auth_callback_failed') && (
             <div className="mt-5 space-y-3">
               <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
-                Your email hasn&apos;t been confirmed yet. Check your inbox for the confirmation link, or resend it below.
+                {errorType === 'auth_callback_failed'
+                  ? 'That confirmation link has expired or has already been used. Enter your email below and we’ll send you a new one.'
+                  : 'Your email hasn’t been confirmed yet. Check your inbox for the confirmation link, or resend it below.'}
               </div>
               <ResendConfirmationForm />
             </div>
           )}
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-fg-muted">
               Don&apos;t have an account?{' '}
-              <Link href="/signup" className="text-brand-500 font-medium hover:text-brand-700 transition-colors">
+              <Link href="/signup" className="text-accent font-medium hover:text-accent-hover transition-colors">
                 Create one free
               </Link>
             </p>

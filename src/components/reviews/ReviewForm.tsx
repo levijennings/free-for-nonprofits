@@ -20,7 +20,7 @@ const ratingLabels = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent']
 function StarIcon({ filled }: { filled: boolean }) {
   return (
     <svg
-      className={`w-8 h-8 transition-colors ${filled ? 'text-amber-400' : 'text-gray-200'}`}
+      className={`w-8 h-8 transition-colors ${filled ? 'text-amber-400' : 'text-line-strong'}`}
       fill="currentColor"
       viewBox="0 0 20 20"
     >
@@ -98,11 +98,11 @@ export default function ReviewForm({ toolId, toolName, onReviewSubmitted }: Prop
 
   if (!user) {
     return (
-      <div className="text-center py-5 border border-dashed border-gray-200 rounded-xl">
-        <p className="text-sm text-gray-500 mb-3">Sign in to rate and review this resource</p>
+      <div className="text-center py-5 border border-dashed border-line-strong rounded-xl">
+        <p className="text-sm text-fg-subtle mb-3">Sign in to rate and review this resource</p>
         <a
           href="/login"
-          className="inline-block px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-lg transition-colors"
+          className="inline-block px-4 py-2 bg-accent hover:bg-accent-hover text-accent-fg text-sm font-semibold rounded-lg transition-colors duration-fast"
         >
           Sign in to review
         </a>
@@ -113,29 +113,29 @@ export default function ReviewForm({ toolId, toolName, onReviewSubmitted }: Prop
   // Show existing review (not editing)
   if (existingReview && !editing) {
     return (
-      <div className="bg-brand-50 border border-brand-100 rounded-xl p-4">
+      <div className="bg-accent-subtle border border-accent-line rounded-xl p-4">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-semibold text-brand-700">Your review</p>
+          <p className="text-sm font-semibold text-accent">Your review</p>
           <button
             onClick={() => setEditing(true)}
-            className="text-xs text-brand-600 hover:text-brand-700 font-medium"
+            className="text-xs text-accent hover:text-accent-hover font-medium"
           >
             Edit
           </button>
         </div>
         <div className="flex gap-0.5 mb-2">
           {[1,2,3,4,5].map(s => (
-            <svg key={s} className={`w-4 h-4 ${s <= existingReview.rating ? 'text-amber-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
+            <svg key={s} className={`w-4 h-4 ${s <= existingReview.rating ? 'text-amber-400' : 'text-line-strong'}`} fill="currentColor" viewBox="0 0 20 20">
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
             </svg>
           ))}
-          <span className="text-xs text-gray-500 ml-1">{ratingLabels[existingReview.rating]}</span>
+          <span className="text-xs text-fg-subtle ml-1">{ratingLabels[existingReview.rating]}</span>
         </div>
         {existingReview.comment && (
-          <p className="text-sm text-gray-700">{existingReview.comment}</p>
+          <p className="text-sm text-fg-muted">{existingReview.comment}</p>
         )}
         {submitted && (
-          <p className="text-xs text-brand-600 mt-2 font-medium">✓ Review saved</p>
+          <p className="text-xs text-accent mt-2 font-medium">✓ Review saved</p>
         )}
       </div>
     )
@@ -146,8 +146,8 @@ export default function ReviewForm({ toolId, toolName, onReviewSubmitted }: Prop
     <form onSubmit={handleSubmit} className="space-y-4">
       {editing && (
         <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-gray-700">Edit your review</p>
-          <button type="button" onClick={() => setEditing(false)} className="text-xs text-gray-400 hover:text-gray-600">
+          <p className="text-sm font-semibold text-fg-muted">Edit your review</p>
+          <button type="button" onClick={() => setEditing(false)} className="text-xs text-fg-subtle hover:text-fg">
             Cancel
           </button>
         </div>
@@ -155,7 +155,7 @@ export default function ReviewForm({ toolId, toolName, onReviewSubmitted }: Prop
 
       {/* Star rating */}
       <div>
-        <p className="text-sm font-medium text-gray-700 mb-2">Rating</p>
+        <p className="text-sm font-medium text-fg-muted mb-2">Rating</p>
         <div className="flex gap-1">
           {[1,2,3,4,5].map(star => (
             <button
@@ -172,7 +172,7 @@ export default function ReviewForm({ toolId, toolName, onReviewSubmitted }: Prop
           ))}
         </div>
         {(hoverRating || rating) > 0 && (
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-fg-subtle mt-1">
             {ratingLabels[hoverRating || rating]}
           </p>
         )}
@@ -180,8 +180,8 @@ export default function ReviewForm({ toolId, toolName, onReviewSubmitted }: Prop
 
       {/* Comment */}
       <div>
-        <label className="text-sm font-medium text-gray-700" htmlFor="review-comment">
-          Comment <span className="font-normal text-gray-400">(optional)</span>
+        <label className="text-sm font-medium text-fg-muted" htmlFor="review-comment">
+          Comment <span className="font-normal text-fg-subtle">(optional)</span>
         </label>
         <textarea
           id="review-comment"
@@ -190,16 +190,16 @@ export default function ReviewForm({ toolId, toolName, onReviewSubmitted }: Prop
           placeholder={`How has ${toolName} helped your nonprofit?`}
           rows={3}
           maxLength={1000}
-          className="mt-1.5 w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent resize-none placeholder:text-gray-400"
+          className="mt-1.5 w-full text-sm border border-line rounded-lg px-3 py-2.5 bg-surface text-fg focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent resize-none placeholder:text-fg-subtle"
         />
       </div>
 
-      {error && <p className="text-xs text-red-600 font-medium">{error}</p>}
+      {error && <p className="text-xs text-status-warn font-medium">{error}</p>}
 
       <button
         type="submit"
         disabled={submitting || rating === 0}
-        className="w-full py-2.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors"
+        className="w-full py-2.5 bg-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed text-accent-fg text-sm font-semibold rounded-lg transition-colors duration-fast"
       >
         {submitting ? 'Saving…' : editing ? 'Update review' : 'Submit review'}
       </button>

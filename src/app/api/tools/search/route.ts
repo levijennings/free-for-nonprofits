@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { searchSchema } from '@/lib/validations'
+import { buildSearchOrFilter } from '@/lib/search-filter'
 import {
   createErrorResponse,
   createSuccessResponse,
@@ -46,10 +47,22 @@ export async function GET(request: NextRequest) {
         { count: 'exact' }
       )
 
-    // Apply full-text search on name and description
-    // Using ilike for case-insensitive pattern matching
-    const searchTerm = `%${query}%`
-    dbQuery = dbQuery.or(`name.ilike.${searchTerm},description.ilike.${searchTerm}`)
+    // Case-insensitive pattern matching on name and description.
+    // The value MUST be sanitised before it reaches the or() string: commas
+    // and parentheses are PostgREST filter grammar, so raw input produces a
+    // malformed filter and zero results. See src/lib/search-filter.ts.
+    const orFilter = buildSearchOrFilter(query, ['name', 'description'])
+
+    if (!orFilter) {
+      // Query was punctuation-only — nothing searchable, so nothing matches.
+      return createSuccessResponse({
+        query,
+        tools: [],
+        pagination: { page, limit, total: 0, totalPages: 0 },
+      })
+    }
+
+    dbQuery = dbQuery.or(orFilter)
 
     // Apply category filter if provided
     if (category && category !== '') {

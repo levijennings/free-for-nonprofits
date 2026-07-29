@@ -81,8 +81,8 @@ export default function ToolActions({
         disabled={busy === 'save'}
         className={`w-full py-2.5 px-4 rounded-xl text-sm font-semibold border transition-all flex items-center justify-between gap-2 ${
           saved
-            ? 'bg-brand-50 border-brand-200 text-brand-700 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
-            : 'bg-white border-gray-200 text-gray-600 hover:border-brand-300 hover:text-brand-600'
+            ? 'bg-accent-subtle border-accent-line text-accent hover:bg-status-warn-bg hover:border-status-warn/30 hover:text-status-warn'
+            : 'bg-surface border-line text-fg-muted hover:border-accent-line hover:text-accent'
         }`}
       >
         <span className="flex items-center gap-2">
@@ -91,7 +91,7 @@ export default function ToolActions({
           </svg>
           {busy === 'save' ? '…' : saved ? 'Saved' : user ? `Save ${toolName}` : 'Sign up to save'}
         </span>
-        {counts.save > 0 && <span className="text-xs text-gray-400 tabular-nums">{counts.save}</span>}
+        {counts.save > 0 && <span className="text-xs text-fg-subtle tabular-nums">{counts.save}</span>}
       </button>
 
       {/* Favorite */}
@@ -101,7 +101,7 @@ export default function ToolActions({
         className={`w-full py-2.5 px-4 rounded-xl text-sm font-semibold border transition-all flex items-center justify-between gap-2 ${
           favorited
             ? 'bg-rose-50 border-rose-200 text-rose-600'
-            : 'bg-white border-gray-200 text-gray-600 hover:border-rose-200 hover:text-rose-500'
+            : 'bg-surface border-line text-fg-muted hover:border-rose-200 hover:text-rose-500'
         }`}
       >
         <span className="flex items-center gap-2">
@@ -110,7 +110,7 @@ export default function ToolActions({
           </svg>
           {busy === 'favorite' ? '…' : favorited ? 'Favorited' : 'Favorite'}
         </span>
-        {counts.favorite > 0 && <span className="text-xs text-gray-400 tabular-nums">{counts.favorite}</span>}
+        {counts.favorite > 0 && <span className="text-xs text-fg-subtle tabular-nums">{counts.favorite}</span>}
       </button>
 
       {/* I use this */}
@@ -119,8 +119,8 @@ export default function ToolActions({
         disabled={busy === 'using'}
         className={`w-full py-2.5 px-4 rounded-xl text-sm font-semibold border transition-all flex items-center justify-between gap-2 ${
           using
-            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-            : 'bg-white border-gray-200 text-gray-600 hover:border-emerald-200 hover:text-emerald-600'
+            ? 'bg-status-done-bg border-accent-line text-status-done'
+            : 'bg-surface border-line text-fg-muted hover:border-accent-line hover:text-status-done'
         }`}
       >
         <span className="flex items-center gap-2">
@@ -129,7 +129,7 @@ export default function ToolActions({
           </svg>
           {busy === 'using' ? '…' : using ? 'I use this ✓' : 'I use this'}
         </span>
-        {counts.using > 0 && <span className="text-xs text-gray-400 tabular-nums">{counts.using}</span>}
+        {counts.using > 0 && <span className="text-xs text-fg-subtle tabular-nums">{counts.using}</span>}
       </button>
 
       {/* Share on Facebook */}
@@ -137,7 +137,7 @@ export default function ToolActions({
         href={fbShareUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="w-full py-2.5 px-4 rounded-xl text-sm font-semibold border border-gray-200 text-gray-500 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
+        className="w-full py-2.5 px-4 rounded-xl text-sm font-semibold border border-line text-fg-subtle hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
       >
         <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
           <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>

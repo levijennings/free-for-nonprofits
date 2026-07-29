@@ -76,16 +76,16 @@ export default function PreferencesForm({ initial }: Props) {
     <div className="space-y-8">
 
       {/* ── Categories ── */}
-      <section className="bg-white rounded-2xl border border-gray-100 p-6">
+      <section className="bg-surface rounded-2xl border border-line p-6">
         <div className="flex items-center justify-between mb-1">
-          <h2 className="font-bold text-gray-900">Tool categories</h2>
+          <h2 className="font-bold text-fg">Tool categories</h2>
           {categories.length > 0 && (
-            <button onClick={() => setCategories([])} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+            <button onClick={() => setCategories([])} className="text-xs text-fg-subtle hover:text-fg transition-colors duration-fast">
               Clear all
             </button>
           )}
         </div>
-        <p className="text-sm text-gray-400 mb-5">Which types of tools are most relevant to your work?</p>
+        <p className="text-sm text-fg-subtle mb-5">Which types of tools are most relevant to your work?</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {CATEGORIES.map(cat => {
             const selected = categories.includes(cat.slug)
@@ -95,17 +95,17 @@ export default function PreferencesForm({ initial }: Props) {
                 onClick={() => toggleCat(cat.slug)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
                   selected
-                    ? 'bg-brand-50 border-brand-300 text-brand-800'
-                    : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                    ? 'bg-accent-subtle border-accent-line text-accent'
+                    : 'bg-surface border-line text-fg-muted hover:border-line-strong hover:bg-surface-subtle'
                 }`}
               >
                 <span className="text-base">{cat.icon}</span>
                 <span className="text-sm font-medium flex-1">{cat.name}</span>
                 <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                  selected ? 'bg-brand-500 border-brand-500' : 'border-gray-300'
+                  selected ? 'bg-accent border-accent' : 'border-line-strong'
                 }`}>
                   {selected && (
-                    <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-2.5 h-2.5 text-accent-fg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   )}
@@ -117,9 +117,9 @@ export default function PreferencesForm({ initial }: Props) {
       </section>
 
       {/* ── Pricing models ── */}
-      <section className="bg-white rounded-2xl border border-gray-100 p-6">
-        <h2 className="font-bold text-gray-900 mb-1">Pricing models</h2>
-        <p className="text-sm text-gray-400 mb-5">Which types of deals matter to you?</p>
+      <section className="bg-surface rounded-2xl border border-line p-6">
+        <h2 className="font-bold text-fg mb-1">Pricing models</h2>
+        <p className="text-sm text-fg-subtle mb-5">Which types of deals matter to you?</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {PRICING.map(p => {
             const selected = pricing.includes(p.value)
@@ -128,13 +128,13 @@ export default function PreferencesForm({ initial }: Props) {
                 key={p.value}
                 onClick={() => togglePricing(p.value)}
                 className={`p-4 rounded-xl border-2 text-left transition-all ${
-                  selected ? p.color + ' border-current' : 'bg-white border-gray-200 hover:border-gray-300'
+                  selected ? p.color + ' border-current' : 'bg-surface border-line hover:border-line-strong'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-sm font-semibold">{p.label}</span>
                   <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                    selected ? 'bg-current border-current' : 'border-gray-300'
+                    selected ? 'bg-current border-current' : 'border-line-strong'
                   }`}>
                     {selected && (
                       <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -151,25 +151,25 @@ export default function PreferencesForm({ initial }: Props) {
       </section>
 
       {/* ── Notification toggle ── */}
-      <section className="bg-white rounded-2xl border border-gray-100 p-6">
+      <section className="bg-surface rounded-2xl border border-line p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-bold text-gray-900">Email notifications</h2>
-            <p className="text-sm text-gray-400 mt-0.5">Get emailed when a tool matching your preferences is added</p>
+            <h2 className="font-bold text-fg">Email notifications</h2>
+            <p className="text-sm text-fg-subtle mt-0.5">Get emailed when a tool matching your preferences is added</p>
           </div>
           <button
             onClick={() => setNotify(n => !n)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-400 ${
-              notify ? 'bg-brand-500' : 'bg-gray-200'
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-focus ${
+              notify ? 'bg-accent' : 'bg-line-strong'
             }`}
           >
-            <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform ${
+            <span className={`inline-block h-4 w-4 rounded-full bg-surface shadow transform transition-transform ${
               notify ? 'translate-x-6' : 'translate-x-1'
             }`} />
           </button>
         </div>
         {!notify && (
-          <p className="mt-3 text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
+          <p className="mt-3 text-xs text-status-progress bg-status-progress-bg rounded-lg px-3 py-2">
             Notifications are off — you won't be alerted when matching tools are added.
           </p>
         )}
@@ -180,19 +180,19 @@ export default function PreferencesForm({ initial }: Props) {
         <button
           onClick={save}
           disabled={status === 'saving'}
-          className="px-8 py-3 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors text-sm"
+          className="px-8 py-3 bg-accent hover:bg-accent-hover disabled:opacity-50 text-accent-fg font-semibold rounded-xl transition-colors duration-fast text-sm"
         >
           {status === 'saving' ? 'Saving…' : 'Save preferences'}
         </button>
 
         {status === 'saved' && (
-          <span className="text-sm text-green-600 font-medium">✓ Saved!</span>
+          <span className="text-sm text-status-done font-medium">✓ Saved!</span>
         )}
         {status === 'error' && (
-          <span className="text-sm text-red-500">Error saving. Please try again.</span>
+          <span className="text-sm text-status-warn">Error saving. Please try again.</span>
         )}
         {status === 'idle' && hasChanges && (
-          <span className="text-xs text-gray-400">You have unsaved changes</span>
+          <span className="text-xs text-fg-subtle">You have unsaved changes</span>
         )}
       </div>
     </div>

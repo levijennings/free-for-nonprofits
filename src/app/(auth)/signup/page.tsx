@@ -17,6 +17,9 @@ export default function SignupPage() {
   const [captchaToken, setCaptchaToken] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // Set when the server's bot heuristics rejected us, so a false-positive human
+  // gets a way out instead of a dead end.
+  const [supportEmail, setSupportEmail] = useState('')
   const [success, setSuccess] = useState(false)
 
   const strength = getPasswordStrength(password)
@@ -36,6 +39,7 @@ export default function SignupPage() {
 
     setLoading(true)
     setError('')
+    setSupportEmail('')
 
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
@@ -54,6 +58,9 @@ export default function SignupPage() {
 
     if (!res.ok) {
       setError(data.error || 'Something went wrong. Please try again.')
+      if (data.code === 'bot_check_failed' && data.supportEmail) {
+        setSupportEmail(data.supportEmail)
+      }
       setLoading(false)
     } else {
       setSuccess(true)
@@ -63,18 +70,18 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="min-h-screen bg-surface-subtle flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-surface rounded-2xl shadow-1 border border-line p-8 text-center">
+          <div className="w-16 h-16 bg-accent-subtle rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h2>
-          <p className="text-gray-600 mb-6">
+          <h2 className="text-2xl font-bold text-fg mb-2">Check your email</h2>
+          <p className="text-fg-muted mb-6">
             We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
           </p>
-          <Link href="/login" className="text-brand-500 font-medium hover:text-brand-700 transition-colors">
+          <Link href="/login" className="text-accent font-medium hover:text-accent-hover transition-colors">
             Back to sign in →
           </Link>
         </div>
@@ -83,11 +90,11 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-surface-subtle flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shadow-sm shrink-0">
+            <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shadow-1 shrink-0">
               <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
                 <path
                   fillRule="evenodd"
@@ -98,66 +105,69 @@ export default function SignupPage() {
               </svg>
             </div>
             <div className="leading-none text-left">
-              <div className="text-[9px] font-bold text-gray-400 tracking-[0.18em] uppercase">Free For</div>
-              <div className="text-[17px] font-extrabold tracking-tight text-gray-900 -mt-0.5">
-                Non<span className="text-brand-600">Profits</span>
+              <div className="text-[9px] font-bold text-fg-subtle tracking-[0.18em] uppercase">Free For</div>
+              <div className="text-[17px] font-extrabold tracking-tight text-fg -mt-0.5">
+                Non<span className="text-accent">Profits</span>
               </div>
             </div>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Claim your free tools</h1>
-          <p className="mt-2 text-gray-500">Save programs, track your tech stack, get notified of new deals.</p>
-          <div className="mt-3 flex flex-col gap-1.5 text-sm text-left bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-            <p className="font-semibold text-green-800 mb-1">What you unlock:</p>
-            <p className="text-green-700">✅ Google Ad Grants — $10K/month in free advertising</p>
-            <p className="text-green-700">✅ Step-by-step claim guides for every tool</p>
-            <p className="text-green-700">✅ Save tools to your nonprofit&apos;s tech stack</p>
-            <p className="text-green-700">✅ New deal alerts as programs are added</p>
+          <h1 className="text-3xl font-bold text-fg">Claim your free tools</h1>
+          <p className="mt-2 text-fg-muted">Save programs, track your tech stack, get notified of new deals.</p>
+          <div className="mt-3 flex flex-col gap-1.5 text-sm text-left bg-accent-subtle border border-accent-line rounded-xl px-4 py-3">
+            <p className="font-semibold text-accent mb-1">What you unlock:</p>
+            <p className="text-fg-muted">✅ Google Ad Grants — $10K/month in free advertising</p>
+            <p className="text-fg-muted">✅ Step-by-step claim guides for every tool</p>
+            <p className="text-fg-muted">✅ Save tools to your nonprofit&apos;s tech stack</p>
+            <p className="text-fg-muted">✅ New deal alerts as programs are added</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="bg-surface rounded-2xl shadow-1 border border-line p-8">
           <form onSubmit={handleSignup} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-fg mb-1.5">
                 Organization name
               </label>
               <input
                 type="text"
+                autoComplete="organization"
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
                 placeholder="Habitat for Humanity Chicago"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
               />
-              <p className="mt-1 text-xs text-gray-400">
+              <p className="mt-1 text-xs text-fg-subtle">
                 Shown to other nonprofits on your reviews and activity. Leave blank to stay unlabeled.
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-fg mb-1.5">
                 Work email <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
                 required
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@yournonprofit.org"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-fg mb-1.5">
                 Password <span className="text-red-500">*</span>
               </label>
               <PasswordInput
                 required
                 minLength={8}
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="At least 8 characters"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
               />
               {password && (
                 <div className="mt-1.5">
@@ -166,12 +176,12 @@ export default function SignupPage() {
                       <div
                         key={i}
                         className={`h-1 flex-1 rounded-full transition-colors ${
-                          i < strength.score ? strength.barColor : 'bg-gray-100'
+                          i < strength.score ? strength.barColor : 'bg-surface-inset'
                         }`}
                       />
                     ))}
                   </div>
-                  <p className="mt-1 text-xs text-gray-400">{strength.label}</p>
+                  <p className="mt-1 text-xs text-fg-subtle">{strength.label}</p>
                 </div>
               )}
             </div>
@@ -200,7 +210,15 @@ export default function SignupPage() {
 
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
-                {error}
+                <p>{error}</p>
+                {supportEmail && (
+                  <p className="mt-2">
+                    <a href={`mailto:${supportEmail}?subject=Signup%20blocked`} className="font-semibold underline">
+                      Email {supportEmail}
+                    </a>{' '}
+                    and we&apos;ll get you set up.
+                  </p>
+                )}
               </div>
             )}
 
@@ -209,27 +227,27 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading || (CAPTCHA_ENABLED && !captchaToken)}
-              className="w-full py-3 bg-brand-500 hover:bg-brand-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-accent hover:bg-accent-hover text-accent-fg font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating account...' : 'Create free account'}
             </button>
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-fg-muted">
               Already have an account?{' '}
-              <Link href="/login" className="text-brand-500 font-medium hover:text-brand-700 transition-colors">
+              <Link href="/login" className="text-accent font-medium hover:text-accent-hover transition-colors">
                 Sign in
               </Link>
             </p>
           </div>
         </div>
 
-        <p className="mt-4 text-center text-xs text-gray-400">
+        <p className="mt-4 text-center text-xs text-fg-subtle">
           By creating an account, you agree to our{' '}
-          <Link href="/legal/terms" className="underline hover:text-gray-600">Terms</Link>
+          <Link href="/legal/terms" className="underline hover:text-fg-muted">Terms</Link>
           {' '}and{' '}
-          <Link href="/legal/privacy" className="underline hover:text-gray-600">Privacy Policy</Link>
+          <Link href="/legal/privacy" className="underline hover:text-fg-muted">Privacy Policy</Link>
         </p>
       </div>
     </div>

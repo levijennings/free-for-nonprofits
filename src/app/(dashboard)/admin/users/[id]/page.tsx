@@ -23,7 +23,7 @@ const orgSizeLabels: Record<string, string> = {
 
 function avatarColor(id: string) {
   const palette = [
-    'bg-brand-100 text-brand-700',
+    'bg-emerald-100 text-emerald-700',
     'bg-purple-100 text-purple-700',
     'bg-amber-100 text-amber-700',
     'bg-rose-100 text-rose-700',
@@ -37,7 +37,7 @@ function StarRow({ rating }: { rating: number }) {
   return (
     <span className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map(s => (
-        <svg key={s} className={`w-3 h-3 ${s <= rating ? 'text-amber-400' : 'text-gray-200'}`} fill="currentColor" viewBox="0 0 20 20">
+        <svg key={s} className={`w-3 h-3 ${s <= rating ? 'text-amber-400' : 'text-line'}`} fill="currentColor" viewBox="0 0 20 20">
           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
         </svg>
       ))}
@@ -45,11 +45,11 @@ function StarRow({ rating }: { rating: number }) {
   )
 }
 
-function StatCard({ label, value, color = 'text-gray-900' }: { label: string; value: string | number; color?: string }) {
+function StatCard({ label, value, color = 'text-fg' }: { label: string; value: string | number; color?: string }) {
   return (
-    <div className="bg-gray-50 rounded-xl px-3 py-3 text-center">
-      <p className={`text-xl font-bold ${color}`}>{value}</p>
-      <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">{label}</p>
+    <div className="bg-surface-subtle rounded-xl px-3 py-3 text-center">
+      <p className={`text-xl font-bold tnum ${color}`}>{value}</p>
+      <p className="text-[11px] text-fg-subtle mt-0.5 leading-tight">{label}</p>
     </div>
   )
 }
@@ -128,39 +128,39 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
   const activityLevel =
     engagementScore >= 15 ? { label: 'Power user', color: 'bg-green-100 text-green-700' } :
     engagementScore >= 5  ? { label: 'Active',     color: 'bg-blue-100 text-blue-700'  } :
-    engagementScore >= 1  ? { label: 'Light',      color: 'bg-gray-100 text-gray-600'  } :
+    engagementScore >= 1  ? { label: 'Light',      color: 'bg-surface-inset text-fg-muted' } :
                             { label: 'Inactive',   color: 'bg-red-50 text-red-500'     }
 
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-surface-subtle">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
           {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
-            <Link href="/admin" className="hover:text-gray-700 transition-colors">Admin</Link>
+          <div className="flex items-center gap-2 text-sm text-fg-subtle mb-6">
+            <Link href="/admin" className="hover:text-fg-muted transition-colors">Admin</Link>
             <span>/</span>
-            <Link href="/admin/users" className="hover:text-gray-700 transition-colors">Users</Link>
+            <Link href="/admin/users" className="hover:text-fg-muted transition-colors">Users</Link>
             <span>/</span>
-            <span className="text-gray-700 font-medium truncate max-w-[200px]">{label}</span>
+            <span className="text-fg-muted font-medium truncate max-w-[200px]">{label}</span>
           </div>
 
           {/* Profile header */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
+          <div className="bg-surface rounded-2xl border border-line p-6 mb-6">
             <div className="flex items-start gap-5">
               <div className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold shrink-0 ${avatarColor(authUser.id)}`}>
                 {initials}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <h1 className="text-xl font-bold text-gray-900">{label}</h1>
+                  <h1 className="text-xl font-bold text-fg">{label}</h1>
                   {profile ? (
                     <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${activityLevel.color}`}>
                       {activityLevel.label}
                     </span>
                   ) : (
-                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-gray-100 text-gray-500">
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-surface-inset text-fg-muted">
                       No profile
                     </span>
                   )}
@@ -170,11 +170,11 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
                     </span>
                   )}
                 </div>
-                {authUser.email && <p className="text-sm text-gray-500">{authUser.email}</p>}
+                {authUser.email && <p className="text-sm text-fg-subtle">{authUser.email}</p>}
                 {profile?.org_name && profile?.display_name && (
-                  <p className="text-sm text-gray-500">{profile.display_name}</p>
+                  <p className="text-sm text-fg-subtle">{profile.display_name}</p>
                 )}
-                <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-gray-400 divide-x divide-gray-100">
+                <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-fg-subtle divide-x divide-line">
                   {profile?.org_size && (
                     <span className="pr-3">{orgSizeLabels[profile.org_size] ?? profile.org_size}</span>
                   )}
@@ -201,17 +201,17 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
               <StatCard label="Favorites"  value={favCount ?? 0}               color="text-rose-500"   />
               <StatCard label="Using"      value={usingCount ?? 0}             color="text-teal-600"   />
               <StatCard label="Reviews"    value={reviewCount ?? 0}            color="text-amber-500"  />
-              <StatCard label="Score"      value={engagementScore}             color="text-gray-700"   />
+              <StatCard label="Score"      value={engagementScore}             color="text-fg-muted"   />
               <StatCard label="Submitted"  value={submissions?.length ?? 0}    color="text-purple-600" />
             </div>
           )}
 
           {/* Saved tools */}
           {(savedTools ?? []).length > 0 && (
-            <section className="bg-white rounded-2xl border border-gray-100 p-5 mb-5">
+            <section className="bg-surface rounded-2xl border border-line p-5 mb-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-bold text-gray-900">Saved tools</h2>
-                {(saveCount ?? 0) > 20 && <span className="text-xs text-gray-400">Showing 20 of {saveCount}</span>}
+                <h2 className="font-bold text-fg">Saved tools</h2>
+                {(saveCount ?? 0) > 20 && <span className="text-xs text-fg-subtle tnum">Showing 20 of {saveCount}</span>}
               </div>
               <div className="space-y-2">
                 {(savedTools ?? []).map(row => {
@@ -221,19 +221,19 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
                     <Link
                       key={row.id}
                       href={`/admin/tools/${tool.slug}`}
-                      className="flex items-center gap-3 group hover:bg-gray-50 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                      className="flex items-center gap-3 group hover:bg-surface-subtle -mx-2 px-2 py-2 rounded-lg transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-lg border border-gray-100 bg-white flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-lg border border-line bg-surface flex items-center justify-center shrink-0">
                         <ToolLogo src={tool.logo_url ?? ''} websiteUrl={tool.website_url} alt={tool.name} className="w-6 h-6 object-contain" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 group-hover:text-brand-600 transition-colors truncate">{tool.name}</p>
-                        <p className="text-xs text-gray-400">{pricingLabels[tool.pricing_model] ?? tool.pricing_model}</p>
+                        <p className="text-sm font-medium text-fg group-hover:text-accent transition-colors truncate">{tool.name}</p>
+                        <p className="text-xs text-fg-subtle">{pricingLabels[tool.pricing_model] ?? tool.pricing_model}</p>
                       </div>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-fg-subtle">
                         {new Date(row.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
-                      <span className="text-gray-200 group-hover:text-brand-400 transition-colors text-xs">→</span>
+                      <span className="text-line-strong group-hover:text-accent transition-colors text-xs">→</span>
                     </Link>
                   )
                 })}
@@ -243,8 +243,8 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
 
           {/* Favorites */}
           {(favTools ?? []).length > 0 && (
-            <section className="bg-white rounded-2xl border border-gray-100 p-5 mb-5">
-              <h2 className="font-bold text-gray-900 mb-4">Favorites</h2>
+            <section className="bg-surface rounded-2xl border border-line p-5 mb-5">
+              <h2 className="font-bold text-fg mb-4">Favorites</h2>
               <div className="flex flex-wrap gap-2">
                 {(favTools ?? []).map(row => {
                   const tool = row.tool as unknown as { id: string; name: string; slug: string; logo_url: string | null } | null
@@ -265,8 +265,8 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
 
           {/* Using */}
           {(usedTools ?? []).length > 0 && (
-            <section className="bg-white rounded-2xl border border-gray-100 p-5 mb-5">
-              <h2 className="font-bold text-gray-900 mb-4">Currently using</h2>
+            <section className="bg-surface rounded-2xl border border-line p-5 mb-5">
+              <h2 className="font-bold text-fg mb-4">Currently using</h2>
               <div className="flex flex-wrap gap-2">
                 {(usedTools ?? []).map(row => {
                   const tool = row.tool as unknown as { id: string; name: string; slug: string } | null
@@ -287,9 +287,9 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
 
           {/* Reviews */}
           {(reviews ?? []).length > 0 && (
-            <section className="bg-white rounded-2xl border border-gray-100 p-5 mb-5">
-              <h2 className="font-bold text-gray-900 mb-4">Reviews written</h2>
-              <div className="divide-y divide-gray-50">
+            <section className="bg-surface rounded-2xl border border-line p-5 mb-5">
+              <h2 className="font-bold text-fg mb-4">Reviews written</h2>
+              <div className="divide-y divide-line">
                 {(reviews ?? []).map(review => {
                   const tool = review.tool as unknown as { id: string; name: string; slug: string } | null
                   return (
@@ -298,17 +298,17 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             {tool && (
-                              <Link href={`/admin/tools/${tool.slug}`} className="text-sm font-semibold text-brand-600 hover:text-brand-800 transition-colors">
+                              <Link href={`/admin/tools/${tool.slug}`} className="text-sm font-semibold text-accent hover:text-accent-hover transition-colors">
                                 {tool.name}
                               </Link>
                             )}
                             <StarRow rating={review.rating} />
-                            <span className="text-xs text-gray-400 ml-auto">
+                            <span className="text-xs text-fg-subtle ml-auto">
                               {new Date(review.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                             </span>
                           </div>
-                          {review.title && <p className="text-sm font-medium text-gray-800 mt-0.5">{review.title}</p>}
-                          {review.comment && <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{review.comment}</p>}
+                          {review.title && <p className="text-sm font-medium text-fg mt-0.5">{review.title}</p>}
+                          {review.comment && <p className="text-sm text-fg-subtle mt-0.5 leading-relaxed">{review.comment}</p>}
                         </div>
                       </div>
                     </div>
@@ -320,12 +320,12 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
 
           {/* Submissions */}
           {(submissions ?? []).length > 0 && (
-            <section className="bg-white rounded-2xl border border-gray-100 p-5 mb-5">
-              <h2 className="font-bold text-gray-900 mb-4">Tool submissions</h2>
+            <section className="bg-surface rounded-2xl border border-line p-5 mb-5">
+              <h2 className="font-bold text-fg mb-4">Tool submissions</h2>
               <div className="space-y-2">
                 {(submissions ?? []).map(sub => (
                   <div key={sub.id} className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-gray-800">{sub.name}</p>
+                    <p className="text-sm font-medium text-fg">{sub.name}</p>
                     <div className="flex items-center gap-3">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         sub.status === 'approved' ? 'bg-green-100 text-green-700' :
@@ -334,7 +334,7 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
                       }`}>
                         {sub.status}
                       </span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-fg-subtle">
                         {new Date(sub.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
                     </div>
@@ -346,14 +346,14 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
 
           {/* Empty state */}
           {profile && (saveCount ?? 0) === 0 && (favCount ?? 0) === 0 && (usingCount ?? 0) === 0 && (reviewCount ?? 0) === 0 && (submissions ?? []).length === 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center text-gray-400 mb-5">
+            <div className="bg-surface rounded-2xl border border-line p-10 text-center text-fg-subtle mb-5">
               <p className="text-3xl mb-3">👤</p>
               <p className="text-sm">This user hasn&apos;t interacted with any tools yet.</p>
             </div>
           )}
 
           {!profile && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center text-gray-400 mb-5">
+            <div className="bg-surface rounded-2xl border border-line p-10 text-center text-fg-subtle mb-5">
               <p className="text-3xl mb-3">👤</p>
               <p className="text-sm">No profile was ever created for this account — it never completed signup.</p>
             </div>
@@ -361,9 +361,9 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
 
           {/* Admin actions */}
           {canDelete && (
-            <section className="bg-white rounded-2xl border border-red-100 p-5">
-              <h2 className="font-bold text-gray-900 mb-1">Danger zone</h2>
-              <p className="text-xs text-gray-400 mb-3">Permanently remove this account.</p>
+            <section className="bg-surface rounded-2xl border border-red-100 p-5">
+              <h2 className="font-bold text-fg mb-1">Danger zone</h2>
+              <p className="text-xs text-fg-subtle mb-3">Permanently remove this account.</p>
               <DeleteUserButton userId={authUser.id} label={authUser.email ?? label} />
             </section>
           )}

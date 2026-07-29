@@ -5,6 +5,13 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/nav/Header'
 import ToolLogo from '@/components/tools/ToolLogo'
+import { StatusPill } from '@/components/ui/StatusPill'
+import {
+  CLAIM_STATUS_COPY,
+  toPillStatus,
+  waitingLabel,
+  type ClaimStatusValue,
+} from '@/lib/claims'
 
 const pricingLabels: Record<string, string> = {
   free: 'Free',
@@ -20,7 +27,7 @@ const pricingColors: Record<string, string> = {
 
 function avatarColor(userId: string) {
   const colors = [
-    'bg-brand-100 text-brand-700',
+    'bg-emerald-100 text-emerald-700',
     'bg-purple-100 text-purple-700',
     'bg-amber-100 text-amber-700',
     'bg-rose-100 text-rose-700',
@@ -37,7 +44,7 @@ function StarRow({ rating }: { rating: number }) {
       {[1, 2, 3, 4, 5].map((s) => (
         <svg
           key={s}
-          className={`w-3.5 h-3.5 ${s <= rating ? 'text-amber-400' : 'text-gray-200'}`}
+          className={`w-3.5 h-3.5 ${s <= rating ? 'text-amber-400' : 'text-line'}`}
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -67,6 +74,7 @@ export default async function DashboardPage() {
     { data: userSubmissions },
     { data: resourceOfWeek },
     { data: newTools },
+    { data: openClaims },
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
 
@@ -116,6 +124,15 @@ export default async function DashboardPage() {
       .gte('created_at', new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString())
       .order('created_at', { ascending: false })
       .limit(5),
+
+    // Applications the user has started but not finished. This is the one
+    // thing on the dashboard they cannot reconstruct from the public site.
+    supabase
+      .from('tool_claims')
+      .select('tool_id, status, note, applied_at, updated_at, tool:tools(id, name, slug, logo_url, website_url)')
+      .eq('user_id', user.id)
+      .in('status', ['gathering_docs', 'applied'])
+      .order('updated_at', { ascending: false }),
   ])
 
   // Fetch profiles for recent reviewers (separate query because reviews.user_id → auth.users, not profiles)
@@ -137,36 +154,36 @@ export default async function DashboardPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-surface-subtle">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
           {/* Welcome header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-fg">
               Welcome back, {displayName} 👋
             </h1>
             {orgName && (
-              <p className="mt-1 text-gray-500">{orgName}</p>
+              <p className="mt-1 text-fg-subtle">{orgName}</p>
             )}
           </div>
 
           {/* Live community stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
-              <p className="text-3xl font-bold text-brand-600">{savedTools?.length ?? 0}</p>
-              <p className="text-sm text-gray-500 mt-1">Your saved tools</p>
+            <div className="bg-surface rounded-2xl border border-line p-5">
+              <p className="text-3xl font-bold text-accent">{savedTools?.length ?? 0}</p>
+              <p className="text-sm text-fg-subtle mt-1">Your saved tools</p>
             </div>
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
-              <p className="text-3xl font-bold text-green-600">{toolCount ?? 0}</p>
-              <p className="text-sm text-gray-500 mt-1">Tools available</p>
+            <div className="bg-surface rounded-2xl border border-line p-5">
+              <p className="text-3xl font-bold text-accent">{toolCount ?? 0}</p>
+              <p className="text-sm text-fg-subtle mt-1">Tools available</p>
             </div>
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="bg-surface rounded-2xl border border-line p-5">
               <p className="text-3xl font-bold text-purple-600">{categoryCount ?? 0}</p>
-              <p className="text-sm text-gray-500 mt-1">Categories</p>
+              <p className="text-sm text-fg-subtle mt-1">Categories</p>
             </div>
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="bg-surface rounded-2xl border border-line p-5">
               <p className="text-3xl font-bold text-amber-500">{userCount ?? 0}</p>
-              <p className="text-sm text-gray-500 mt-1">Nonprofits using</p>
+              <p className="text-sm text-fg-subtle mt-1">Nonprofits using</p>
             </div>
           </div>
 
@@ -179,7 +196,7 @@ export default async function DashboardPage() {
             }
             if (!rotw) return null
             return (
-              <div className="mb-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 via-brand-700 to-teal-800 p-6 text-white shadow-lg">
+              <div className="mb-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-700 via-emerald-800 to-teal-800 p-6 text-white shadow-2">
                 {/* Background texture */}
                 <div className="absolute inset-0 opacity-10" style={{
                   backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
@@ -193,7 +210,7 @@ export default async function DashboardPage() {
                       <span>⭐</span> Resource of the week
                     </div>
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shrink-0 shadow">
+                      <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-1">
                         <ToolLogo src={rotw.logo_url || ''} websiteUrl={rotw.website_url} alt={rotw.name} className="w-9 h-9 object-contain" />
                       </div>
                       <div>
@@ -216,7 +233,7 @@ export default async function DashboardPage() {
                     <div className="flex items-center gap-4 mt-4">
                       <Link
                         href={`/tools/${rotw.slug}`}
-                        className="inline-flex items-center gap-1.5 bg-white text-brand-700 hover:bg-brand-50 font-semibold text-sm px-4 py-2 rounded-xl transition-colors shadow"
+                        className="inline-flex items-center gap-1.5 bg-white text-emerald-700 hover:bg-emerald-50 font-semibold text-sm px-4 py-2 rounded-xl transition-colors shadow-1"
                       >
                         Learn more →
                       </Link>
@@ -244,25 +261,105 @@ export default async function DashboardPage() {
             {/* Left column: saved tools + activity feed */}
             <div className="lg:col-span-2 space-y-8">
 
+              {/* Applications in progress — the reason this account exists */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-fg">Applications in progress</h2>
+                  {openClaims && openClaims.length > 0 && (
+                    <span className="text-xs text-fg-subtle tabular-nums">
+                      {openClaims.length} open
+                    </span>
+                  )}
+                </div>
+
+                {!openClaims || openClaims.length === 0 ? (
+                  <div className="bg-surface rounded-2xl border border-line p-6">
+                    <h3 className="font-semibold text-fg">Nothing in flight</h3>
+                    <p className="text-sm text-fg-muted mt-1 max-w-prose">
+                      Programmes like TechSoup validation or Google Ad Grants are reviewed
+                      by a person and can take weeks. Mark one as started on its page and
+                      it will sit here with the date you applied, so you know when it is
+                      worth chasing.
+                    </p>
+                    <Link
+                      href="/tools"
+                      className="inline-flex mt-4 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-fg transition-colors hover:bg-accent-hover"
+                    >
+                      Find a programme to apply for
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {openClaims.map((claim) => {
+                      const tool = claim.tool as unknown as {
+                        id: string; name: string; slug: string;
+                        logo_url: string | null; website_url: string;
+                      } | null
+                      if (!tool) return null
+                      const status = claim.status as ClaimStatusValue
+                      const waiting = waitingLabel({ status, applied_at: claim.applied_at })
+                      return (
+                        <div
+                          key={claim.tool_id}
+                          className="bg-surface rounded-2xl border border-line p-4 flex items-start gap-4"
+                        >
+                          <ToolLogo
+                            src={tool.logo_url || ''}
+                            websiteUrl={tool.website_url}
+                            alt={tool.name}
+                            className="w-11 h-11 rounded-xl object-contain border border-line p-1 shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Link
+                                href={`/tools/${tool.slug}`}
+                                className="font-semibold text-fg hover:text-accent transition-colors"
+                              >
+                                {tool.name}
+                              </Link>
+                              <StatusPill status={toPillStatus(status)} />
+                            </div>
+                            <p className="text-sm text-fg-muted mt-0.5">
+                              {waiting ?? CLAIM_STATUS_COPY[status].meaning}
+                            </p>
+                            {claim.note && (
+                              <p className="text-xs text-fg-subtle mt-1 line-clamp-2">
+                                {claim.note}
+                              </p>
+                            )}
+                          </div>
+                          <Link
+                            href={`/tools/${tool.slug}`}
+                            className="shrink-0 px-3 py-1.5 text-xs font-medium text-fg-muted border border-line rounded-lg hover:border-line-strong hover:text-fg transition-colors"
+                          >
+                            Update →
+                          </Link>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
               {/* Saved tools */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900">Your saved tools</h2>
-                  <Link href="/tools" className="text-sm text-brand-500 hover:text-brand-700 font-medium transition-colors">
+                  <h2 className="text-xl font-semibold text-fg">Your saved tools</h2>
+                  <Link href="/tools" className="text-sm text-accent hover:text-accent-hover font-medium transition-colors">
                     Browse more →
                   </Link>
                 </div>
 
                 {!savedTools || savedTools.length === 0 ? (
-                  <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
+                  <div className="bg-surface rounded-2xl border border-line p-10 text-center">
                     <div className="text-4xl mb-3">🔖</div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No saved tools yet</h3>
-                    <p className="text-gray-500 text-sm mb-5">
+                    <h3 className="text-lg font-semibold text-fg mb-2">No saved tools yet</h3>
+                    <p className="text-fg-subtle text-sm mb-5">
                       Browse our directory and save tools you want to explore for your organization.
                     </p>
                     <Link
                       href="/tools"
-                      className="inline-block px-5 py-2.5 bg-brand-500 hover:bg-brand-700 text-white font-medium rounded-xl transition-colors text-sm"
+                      className="inline-block px-5 py-2.5 bg-accent hover:bg-accent-hover text-accent-fg font-medium rounded-xl transition-colors text-sm"
                     >
                       Browse all tools
                     </Link>
@@ -276,27 +373,27 @@ export default async function DashboardPage() {
                       }
                       if (!tool) return null
                       return (
-                        <div key={saved.id} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-start gap-4">
-                          <ToolLogo src={tool.logo_url || ''} websiteUrl={tool.website_url} alt={tool.name} className="w-11 h-11 rounded-xl object-contain border border-gray-100 p-1 shrink-0" />
+                        <div key={saved.id} className="bg-surface rounded-2xl border border-line p-4 flex items-start gap-4">
+                          <ToolLogo src={tool.logo_url || ''} websiteUrl={tool.website_url} alt={tool.name} className="w-11 h-11 rounded-xl object-contain border border-line p-1 shrink-0" />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <Link href={`/tools/${tool.slug}`} className="font-semibold text-gray-900 hover:text-brand-600 transition-colors">
+                              <Link href={`/tools/${tool.slug}`} className="font-semibold text-fg hover:text-accent transition-colors">
                                 {tool.name}
                               </Link>
-                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${pricingColors[tool.pricing_model] ?? 'bg-gray-100 text-gray-700'}`}>
+                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${pricingColors[tool.pricing_model] ?? 'bg-surface-inset text-fg-muted'}`}>
                                 {pricingLabels[tool.pricing_model] ?? tool.pricing_model}
                               </span>
                             </div>
-                            <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">{tool.description}</p>
+                            <p className="text-sm text-fg-subtle mt-0.5 line-clamp-1">{tool.description}</p>
                             {tool.nonprofit_deal && (
-                              <p className="text-xs text-green-700 mt-1">🎁 {tool.nonprofit_deal}</p>
+                              <p className="text-xs text-accent mt-1">🎁 {tool.nonprofit_deal}</p>
                             )}
                           </div>
                           <a
                             href={tool.website_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="shrink-0 px-3 py-1.5 text-xs font-medium text-brand-600 hover:text-brand-800 border border-brand-200 hover:border-brand-400 rounded-lg transition-colors"
+                            className="shrink-0 px-3 py-1.5 text-xs font-medium text-accent hover:text-accent-hover border border-accent-line hover:border-accent rounded-lg transition-colors"
                           >
                             Visit →
                           </a>
@@ -310,8 +407,8 @@ export default async function DashboardPage() {
               {/* Community activity feed */}
               {recentReviews && recentReviews.length > 0 && (
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Community activity</h2>
-                  <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50">
+                  <h2 className="text-xl font-semibold text-fg mb-4">Community activity</h2>
+                  <div className="bg-surface rounded-2xl border border-line divide-y divide-line">
                     {recentReviews.map((review) => {
                       const tool = review.tools as unknown as { name: string; slug: string } | null
                       const reviewer = profileMap[review.user_id] ?? null
@@ -330,12 +427,12 @@ export default async function DashboardPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-sm font-medium text-gray-900">
+                              <span className="text-sm font-medium text-fg">
                                 {isOwn ? 'You' : label || 'A nonprofit'}
                               </span>
-                              <span className="text-xs text-gray-400">reviewed</span>
+                              <span className="text-xs text-fg-subtle">reviewed</span>
                               {tool && (
-                                <Link href={`/tools/${tool.slug}`} className="text-sm font-medium text-brand-600 hover:text-brand-800 transition-colors">
+                                <Link href={`/tools/${tool.slug}`} className="text-sm font-medium text-accent hover:text-accent-hover transition-colors">
                                   {tool.name}
                                 </Link>
                               )}
@@ -343,10 +440,10 @@ export default async function DashboardPage() {
                             <div className="flex items-center gap-2 mt-0.5">
                               <StarRow rating={review.rating} />
                               {review.comment && (
-                                <span className="text-xs text-gray-500 truncate">{review.comment}</span>
+                                <span className="text-xs text-fg-subtle truncate">{review.comment}</span>
                               )}
                             </div>
-                            <p className="text-xs text-gray-400 mt-0.5">
+                            <p className="text-xs text-fg-subtle mt-0.5">
                               {new Date(review.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                             </p>
                           </div>
@@ -364,14 +461,14 @@ export default async function DashboardPage() {
 
               {/* Onboarding checklist */}
               {checklistDone < 3 && (
-                <div className="bg-white rounded-2xl border border-gray-100 p-5">
+                <div className="bg-surface rounded-2xl border border-line p-5">
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-semibold text-gray-900">Get started</h3>
-                    <span className="text-xs text-gray-400 font-medium">{checklistDone}/3</span>
+                    <h3 className="font-semibold text-fg">Get started</h3>
+                    <span className="text-xs text-fg-subtle font-medium tnum">{checklistDone}/3</span>
                   </div>
-                  <div className="w-full bg-gray-100 rounded-full h-1.5 mb-4">
+                  <div className="w-full bg-surface-inset rounded-full h-1.5 mb-4">
                     <div
-                      className="bg-brand-500 h-1.5 rounded-full transition-all"
+                      className="bg-accent h-1.5 rounded-full transition-all"
                       style={{ width: `${(checklistDone / 3) * 100}%` }}
                     />
                   </div>
@@ -385,8 +482,8 @@ export default async function DashboardPage() {
 
               {/* Trending tools */}
               {trendingTools && trendingTools.length > 0 && (
-                <div className="bg-white rounded-2xl border border-gray-100 p-5">
-                  <h3 className="font-semibold text-gray-900 mb-4">🔥 Most used right now</h3>
+                <div className="bg-surface rounded-2xl border border-line p-5">
+                  <h3 className="font-semibold text-fg mb-4">🔥 Most used right now</h3>
                   <div className="space-y-3">
                     {trendingTools.map((tool) => {
                       const total = (tool.save_count ?? 0) + (tool.using_count ?? 0) + (tool.favorite_count ?? 0)
@@ -396,20 +493,20 @@ export default async function DashboardPage() {
                           href={`/tools/${tool.slug}`}
                           className="flex items-center gap-3 group"
                         >
-                          <ToolLogo src={tool.logo_url || ''} websiteUrl={tool.website_url} alt={tool.name} className="w-9 h-9 rounded-lg object-contain border border-gray-100 p-0.5 shrink-0" />
+                          <ToolLogo src={tool.logo_url || ''} websiteUrl={tool.website_url} alt={tool.name} className="w-9 h-9 rounded-lg object-contain border border-line p-0.5 shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 group-hover:text-brand-600 transition-colors truncate">{tool.name}</p>
-                            <p className="text-xs text-gray-400">
+                            <p className="text-sm font-medium text-fg group-hover:text-accent transition-colors truncate">{tool.name}</p>
+                            <p className="text-xs text-fg-subtle">
                               {tool.using_count > 0 ? `${tool.using_count} using` : pricingLabels[tool.pricing_model]}
                               {tool.save_count > 0 ? ` · ${tool.save_count} saved` : ''}
                             </p>
                           </div>
-                          <span className="text-xs font-semibold text-gray-300 group-hover:text-brand-400 transition-colors shrink-0">→</span>
+                          <span className="text-xs font-semibold text-line-strong group-hover:text-accent transition-colors shrink-0">→</span>
                         </Link>
                       )
                     })}
                   </div>
-                  <Link href="/tools" className="block mt-4 text-center text-sm text-brand-500 hover:text-brand-700 font-medium transition-colors">
+                  <Link href="/tools" className="block mt-4 text-center text-sm text-accent hover:text-accent-hover font-medium transition-colors">
                     View all tools →
                   </Link>
                 </div>
@@ -417,10 +514,10 @@ export default async function DashboardPage() {
 
               {/* New resources */}
               {newTools && newTools.length > 0 && (
-                <div className="bg-white rounded-2xl border border-gray-100 p-5">
+                <div className="bg-surface rounded-2xl border border-line p-5">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-gray-900">✨ New resources</h3>
-                    <span className="text-xs text-gray-400">last 45 days</span>
+                    <h3 className="font-semibold text-fg">✨ New resources</h3>
+                    <span className="text-xs text-fg-subtle">last 45 days</span>
                   </div>
                   <div className="space-y-3">
                     {newTools.map((tool) => {
@@ -431,56 +528,56 @@ export default async function DashboardPage() {
                           href={`/tools/${tool.slug}`}
                           className="flex items-center gap-3 group"
                         >
-                          <ToolLogo src={tool.logo_url || ''} websiteUrl={tool.website_url} alt={tool.name} className="w-9 h-9 rounded-lg object-contain border border-gray-100 p-0.5 shrink-0" />
+                          <ToolLogo src={tool.logo_url || ''} websiteUrl={tool.website_url} alt={tool.name} className="w-9 h-9 rounded-lg object-contain border border-line p-0.5 shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 group-hover:text-brand-600 transition-colors truncate">{tool.name}</p>
-                            <p className="text-xs text-gray-400">
+                            <p className="text-sm font-medium text-fg group-hover:text-accent transition-colors truncate">{tool.name}</p>
+                            <p className="text-xs text-fg-subtle">
                               {daysAgo === 0 ? 'Added today' : daysAgo === 1 ? 'Added yesterday' : `Added ${daysAgo}d ago`}
                               {' · '}{pricingLabels[tool.pricing_model] ?? tool.pricing_model}
                             </p>
                           </div>
-                          <span className="shrink-0 inline-block px-1.5 py-0.5 text-xs font-semibold bg-brand-50 text-brand-600 rounded-full">New</span>
+                          <span className="shrink-0 inline-block px-1.5 py-0.5 text-xs font-semibold bg-accent-subtle text-accent rounded-full">New</span>
                         </Link>
                       )
                     })}
                   </div>
-                  <Link href="/tools" className="block mt-4 text-center text-sm text-brand-500 hover:text-brand-700 font-medium transition-colors">
+                  <Link href="/tools" className="block mt-4 text-center text-sm text-accent hover:text-accent-hover font-medium transition-colors">
                     See all tools →
                   </Link>
                 </div>
               )}
 
               {/* Account info */}
-              <div className="bg-white rounded-2xl border border-gray-100 p-5">
+              <div className="bg-surface rounded-2xl border border-line p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900">Your account</h3>
-                  <Link href="/dashboard/account" className="text-xs font-medium text-brand-500 hover:text-brand-700 transition-colors">
+                  <h3 className="font-semibold text-fg">Your account</h3>
+                  <Link href="/dashboard/account" className="text-xs font-medium text-accent hover:text-accent-hover transition-colors">
                     Edit
                   </Link>
                 </div>
                 <dl className="space-y-2 text-sm">
                   <div>
-                    <dt className="text-xs text-gray-400 mb-0.5">Email</dt>
-                    <dd className="text-gray-900 font-medium truncate">{user.email}</dd>
+                    <dt className="text-xs text-fg-subtle mb-0.5">Email</dt>
+                    <dd className="text-fg font-medium truncate">{user.email}</dd>
                   </div>
                   {orgName && (
                     <div>
-                      <dt className="text-xs text-gray-400 mb-0.5">Organization</dt>
-                      <dd className="text-gray-900 font-medium">{orgName}</dd>
+                      <dt className="text-xs text-fg-subtle mb-0.5">Organization</dt>
+                      <dd className="text-fg font-medium">{orgName}</dd>
                     </div>
                   )}
                   <div>
-                    <dt className="text-xs text-gray-400 mb-0.5">Member since</dt>
-                    <dd className="text-gray-900 font-medium">
+                    <dt className="text-xs text-fg-subtle mb-0.5">Member since</dt>
+                    <dd className="text-fg font-medium">
                       {new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                     </dd>
                   </div>
                 </dl>
-                <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
-                  <Link href="/submit" className="block text-center text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 rounded-xl py-2 transition-colors">
+                <div className="mt-4 pt-4 border-t border-line space-y-2">
+                  <Link href="/submit" className="block text-center text-sm font-medium text-accent-fg bg-accent hover:bg-accent-hover rounded-xl py-2 transition-colors">
                     Submit a tool
                   </Link>
-                  <Link href="/tools" className="block text-center text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-xl py-2 transition-colors">
+                  <Link href="/tools" className="block text-center text-sm font-medium text-fg-muted hover:text-fg hover:bg-surface-subtle rounded-xl py-2 transition-colors">
                     Browse all tools
                   </Link>
                 </div>
@@ -497,14 +594,14 @@ export default async function DashboardPage() {
 function ChecklistItem({ done, href, label }: { done: boolean; href: string; label: string }) {
   return (
     <Link href={done ? '#' : href} className={`flex items-center gap-3 group ${done ? 'pointer-events-none' : ''}`}>
-      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${done ? 'bg-brand-500 border-brand-500' : 'border-gray-300 group-hover:border-brand-400'}`}>
+      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${done ? 'bg-accent border-accent' : 'border-line-strong group-hover:border-accent'}`}>
         {done && (
-          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3 h-3 text-accent-fg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
           </svg>
         )}
       </div>
-      <span className={`text-sm transition-colors ${done ? 'text-gray-400 line-through' : 'text-gray-700 group-hover:text-brand-600'}`}>
+      <span className={`text-sm transition-colors ${done ? 'text-fg-subtle line-through' : 'text-fg-muted group-hover:text-accent'}`}>
         {label}
       </span>
     </Link>

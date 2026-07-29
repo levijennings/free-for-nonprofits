@@ -6,6 +6,7 @@ import type { Metadata } from 'next'
 import ToolLogo from '@/components/tools/ToolLogo'
 import AffiliateLink from '@/components/tools/AffiliateLink'
 import ToolActions from '@/components/tools/ToolActions'
+import ClaimGuide from '@/components/tools/ClaimGuide'
 import ReviewForm from '@/components/reviews/ReviewForm'
 import ReviewsList from '@/components/reviews/ReviewsList'
 
@@ -170,26 +171,26 @@ export default async function ToolDetailPage({ params }: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-surface-subtle">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       {/* Breadcrumb */}
-      <div className="bg-white border-b border-gray-100">
+      <div className="bg-surface border-b border-line">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3">
-          <nav className="flex items-center gap-2 text-sm text-gray-500">
-            <Link href="/tools" className="hover:text-gray-900 transition-colors">Tools</Link>
+          <nav className="flex items-center gap-2 text-sm text-fg-muted">
+            <Link href="/tools" className="hover:text-fg transition-colors">Tools</Link>
             <span>›</span>
             {tool.category && (
               <>
-                <Link href={`/tools?category=${tool.category.slug}`} className="hover:text-gray-900 transition-colors">
+                <Link href={`/tools?category=${tool.category.slug}`} className="hover:text-fg transition-colors">
                   {tool.category.name}
                 </Link>
                 <span>›</span>
               </>
             )}
-            <span className="text-gray-900 font-medium">{tool.name}</span>
+            <span className="text-fg font-medium">{tool.name}</span>
           </nav>
         </div>
       </div>
@@ -199,19 +200,19 @@ export default async function ToolDetailPage({ params }: Props) {
           {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Header card */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <div className="bg-surface rounded-2xl border border-line p-6">
               <div className="flex items-start gap-4">
                 {tool.logo_url && (
                   <ToolLogo
                     src={tool.logo_url}
                     alt={tool.name}
-                    className="w-16 h-16 rounded-xl object-contain border border-gray-100 p-1 bg-white shrink-0"
+                    className="w-16 h-16 rounded-xl object-contain border border-line p-1 bg-surface-raised shrink-0"
                   />
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <h1 className="text-2xl font-bold text-gray-900">{tool.name}</h1>
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${pricingColors[tool.pricing_model] ?? 'bg-gray-100 text-gray-700'}`}>
+                    <h1 className="text-2xl font-bold text-fg">{tool.name}</h1>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${pricingColors[tool.pricing_model] ?? 'bg-surface-inset text-fg-muted'}`}>
                       {pricingLabels[tool.pricing_model] ?? tool.pricing_model}
                     </span>
                     {tool.is_verified && (
@@ -224,7 +225,7 @@ export default async function ToolDetailPage({ params }: Props) {
                     )}
                   </div>
                   {tool.category && (
-                    <Link href={`/tools?category=${tool.category.slug}`} className="text-sm text-gray-500 hover:text-brand-600 transition-colors">
+                    <Link href={`/tools?category=${tool.category.slug}`} className="text-sm text-fg-muted hover:text-accent transition-colors">
                       {tool.category.icon} {tool.category.name}
                     </Link>
                   )}
@@ -233,12 +234,12 @@ export default async function ToolDetailPage({ params }: Props) {
                     <div className="mt-1.5 flex items-center gap-1.5">
                       <div className="flex gap-0.5">
                         {[1,2,3,4,5].map(s => (
-                          <svg key={s} className={`w-4 h-4 ${s <= Math.round(avgRating!) ? 'text-amber-400' : 'text-gray-200'}`} fill="currentColor" viewBox="0 0 20 20">
+                          <svg key={s} className={`w-4 h-4 ${s <= Math.round(avgRating!) ? 'text-amber-400' : 'text-line-strong'}`} fill="currentColor" viewBox="0 0 20 20">
                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                           </svg>
                         ))}
                       </div>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-fg-muted">
                         {avgRating!.toFixed(1)} · {reviewList.length} review{reviewList.length !== 1 ? 's' : ''}
                       </span>
                     </div>
@@ -246,7 +247,7 @@ export default async function ToolDetailPage({ params }: Props) {
                 </div>
               </div>
 
-              <p className="mt-4 text-gray-700 leading-relaxed">
+              <p className="mt-4 text-fg-muted leading-relaxed">
                 {tool.long_description || tool.description}
               </p>
 
@@ -256,7 +257,7 @@ export default async function ToolDetailPage({ params }: Props) {
                     <Link
                       key={tag}
                       href={`/tools?q=${tag}`}
-                      className="text-xs px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full transition-colors"
+                      className="text-xs px-2.5 py-1 bg-surface-subtle hover:bg-surface-inset text-fg-muted rounded-full transition-colors"
                     >
                       {tag}
                     </Link>
@@ -266,11 +267,11 @@ export default async function ToolDetailPage({ params }: Props) {
             </div>
 
             {/* SEO intro — targets "[Tool] for nonprofits" keyword */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6">
-              <h2 className="text-base font-semibold text-gray-900 mb-2">
+            <div className="bg-surface rounded-2xl border border-line p-6">
+              <h2 className="text-base font-semibold text-fg mb-2">
                 {tool.name} for Nonprofits
               </h2>
-              <p className="text-sm text-gray-600 leading-relaxed">
+              <p className="text-sm text-fg-muted leading-relaxed">
                 {tool.pricing_model === 'free' && (
                   `${tool.name} is available completely free for nonprofit organizations. `
                 )}
@@ -286,17 +287,20 @@ export default async function ToolDetailPage({ params }: Props) {
               </p>
             </div>
 
+            {/* What it takes to actually claim this */}
+            <ClaimGuide tool={tool} />
+
             {/* Features */}
             {features.length > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-100 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Key Features</h2>
+              <div className="bg-surface rounded-2xl border border-line p-6">
+                <h2 className="text-lg font-semibold text-fg mb-4">Key Features</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {features.map((feature: string) => (
                     <div key={feature} className="flex items-start gap-2.5">
-                      <svg className="w-4 h-4 text-brand-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-accent mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      <span className="text-sm text-gray-700">{feature}</span>
+                      <span className="text-sm text-fg-muted">{feature}</span>
                     </div>
                   ))}
                 </div>
@@ -304,31 +308,31 @@ export default async function ToolDetailPage({ params }: Props) {
             )}
 
             {/* Reviews */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-1">
+            <div className="bg-surface rounded-2xl border border-line p-6">
+              <h2 className="text-lg font-semibold text-fg mb-1">
                 Reviews
                 {reviewList.length > 0 && (
-                  <span className="ml-2 text-sm font-normal text-gray-400">({reviewList.length})</span>
+                  <span className="ml-2 text-sm font-normal text-fg-subtle">({reviewList.length})</span>
                 )}
               </h2>
               {reviewList.length === 0 && (
-                <p className="text-sm text-gray-400 mb-5">No reviews yet — be the first.</p>
+                <p className="text-sm text-fg-subtle mb-5">No reviews yet — be the first.</p>
               )}
               {reviewList.length > 0 && (
                 <div className="mb-6">
                   <ReviewsList reviews={reviewList} />
                 </div>
               )}
-              <div className={reviewList.length > 0 ? 'pt-5 border-t border-gray-100' : ''}>
-                <p className="text-sm font-semibold text-gray-700 mb-4">Leave a review</p>
+              <div className={reviewList.length > 0 ? 'pt-5 border-t border-line' : ''}>
+                <p className="text-sm font-semibold text-fg mb-4">Leave a review</p>
                 <ReviewForm toolId={tool.id} toolName={tool.name} />
               </div>
             </div>
 
             {/* Related tools */}
             {relatedTools && relatedTools.length > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-100 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              <div className="bg-surface rounded-2xl border border-line p-6">
+                <h2 className="text-lg font-semibold text-fg mb-4">
                   More {tool.category?.name} tools
                 </h2>
                 <div className="space-y-3">
@@ -336,16 +340,16 @@ export default async function ToolDetailPage({ params }: Props) {
                     <Link
                       key={related.id}
                       href={`/tools/${related.slug}`}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-subtle transition-colors group"
                     >
                       {related.logo_url && (
-                        <img src={related.logo_url} alt={related.name} className="w-9 h-9 rounded-lg object-contain border border-gray-100 p-0.5" />
+                        <img src={related.logo_url} alt={related.name} className="w-9 h-9 rounded-lg object-contain border border-line p-0.5" />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 group-hover:text-brand-600 transition-colors">{related.name}</p>
-                        <p className="text-xs text-gray-500 truncate">{related.description}</p>
+                        <p className="text-sm font-medium text-fg group-hover:text-accent transition-colors">{related.name}</p>
+                        <p className="text-xs text-fg-subtle truncate">{related.description}</p>
                       </div>
-                      <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${pricingColors[related.pricing_model] ?? 'bg-gray-100 text-gray-700'}`}>
+                      <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${pricingColors[related.pricing_model] ?? 'bg-surface-inset text-fg-muted'}`}>
                         {pricingLabels[related.pricing_model] ?? related.pricing_model}
                       </span>
                     </Link>
@@ -358,23 +362,33 @@ export default async function ToolDetailPage({ params }: Props) {
           {/* Sidebar */}
           <div className="space-y-4">
             {/* CTA card */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 sticky top-24">
-              <div className={`inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg mb-4 ${pricingColors[tool.pricing_model] ?? 'bg-gray-100 text-gray-700'}`}>
+            <div className="bg-surface rounded-2xl border border-line p-6 sticky top-24">
+              <div className={`inline-flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg mb-4 ${pricingColors[tool.pricing_model] ?? 'bg-surface-inset text-fg-muted'}`}>
                 {tool.pricing_model === 'free' && '🎁'}
                 {tool.pricing_model === 'freemium' && '⚡'}
                 {tool.pricing_model === 'nonprofit_discount' && '💜'}
                 {' '}{pricingLabels[tool.pricing_model]}
               </div>
 
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-fg-muted mb-4">
                 {pricingDescriptions[tool.pricing_model]}
               </p>
 
+              {/* Only call it a "Nonprofit Deal" when it actually is one.
+                  For tools open to everyone this block used to contradict the
+                  claim guide sitting right next to it. */}
               {tool.nonprofit_deal && (
-                <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 mb-5">
-                  <p className="text-xs font-semibold text-emerald-800 mb-1">Nonprofit Deal</p>
-                  <p className="text-sm text-emerald-700 leading-relaxed">{tool.nonprofit_deal}</p>
-                </div>
+                tool.requires_nonprofit_status === false ? (
+                  <div className="bg-surface-subtle border border-line rounded-xl p-3 mb-5">
+                    <p className="text-xs font-semibold text-fg mb-1">Open to anyone</p>
+                    <p className="text-sm text-fg-muted leading-relaxed">{tool.nonprofit_deal}</p>
+                  </div>
+                ) : (
+                  <div className="bg-accent-subtle border border-accent-line rounded-xl p-3 mb-5">
+                    <p className="text-xs font-semibold text-accent mb-1">Nonprofit Deal</p>
+                    <p className="text-sm text-fg-muted leading-relaxed">{tool.nonprofit_deal}</p>
+                  </div>
+                )
               )}
 
               <AffiliateLink
@@ -395,28 +409,28 @@ export default async function ToolDetailPage({ params }: Props) {
             </div>
 
             {/* Metadata */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">Details</h3>
+            <div className="bg-surface rounded-2xl border border-line p-6">
+              <h3 className="text-sm font-semibold text-fg mb-3">Details</h3>
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">Pricing</dt>
-                  <dd className="font-medium text-gray-900">{pricingLabels[tool.pricing_model]}</dd>
+                  <dt className="text-fg-muted">Pricing</dt>
+                  <dd className="font-medium text-fg">{pricingLabels[tool.pricing_model]}</dd>
                 </div>
                 {tool.category && (
                   <div className="flex justify-between">
-                    <dt className="text-gray-500">Category</dt>
-                    <dd className="font-medium text-gray-900">{tool.category.name}</dd>
+                    <dt className="text-fg-muted">Category</dt>
+                    <dd className="font-medium text-fg">{tool.category.name}</dd>
                   </div>
                 )}
                 {reviewList.length > 0 && (
                   <div className="flex justify-between">
-                    <dt className="text-gray-500">Rating</dt>
-                    <dd className="font-medium text-gray-900">⭐ {avgRating!.toFixed(1)} / 5</dd>
+                    <dt className="text-fg-muted">Rating</dt>
+                    <dd className="font-medium text-fg">⭐ {avgRating!.toFixed(1)} / 5</dd>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">Verified</dt>
-                  <dd className="font-medium text-gray-900">{tool.is_verified ? '✅ Yes' : '⏳ Pending'}</dd>
+                  <dt className="text-fg-muted">Verified</dt>
+                  <dd className="font-medium text-fg">{tool.is_verified ? '✅ Yes' : '⏳ Pending'}</dd>
                 </div>
               </dl>
             </div>

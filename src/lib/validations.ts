@@ -37,6 +37,18 @@ export const searchSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional().default(20),
 })
 
+// Claim tracking. `status` mirrors the claim_status Postgres enum; applied_at
+// is derived server-side from the transition, never accepted from the client.
+export const claimUpsertSchema = z.object({
+  tool_id: z.string().uuid('Invalid tool ID'),
+  status: z.enum(['not_started', 'gathering_docs', 'applied', 'approved'], {
+    errorMap: () => ({
+      message: 'Status must be one of: not_started, gathering_docs, applied, approved',
+    }),
+  }),
+  note: z.string().max(1000, 'Note must be less than 1000 characters').nullish(),
+})
+
 export const paginationSchema = z.object({
   page: z.coerce.number().int().min(1).optional().default(1),
   limit: z.coerce.number().int().min(1).max(100).optional().default(20),
@@ -53,4 +65,5 @@ export type ReviewInput = z.infer<typeof reviewSchema>
 export type ProfileUpdate = z.infer<typeof profileUpdateSchema>
 export type SearchQuery = z.infer<typeof searchSchema>
 export type Pagination = z.infer<typeof paginationSchema>
+export type ClaimUpsertInput = z.infer<typeof claimUpsertSchema>
 export type SignupInput = z.infer<typeof signupSchema>

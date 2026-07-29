@@ -42,18 +42,18 @@ export default async function WishlistPage() {
   }))
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-surface-subtle">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
           {/* Page header */}
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-brand-50 text-brand-700 text-xs font-bold px-4 py-1.5 rounded-full mb-4 uppercase tracking-widest">
+            <div className="inline-flex items-center gap-2 bg-accent-subtle text-accent text-xs font-bold px-4 py-1.5 rounded-full mb-4 uppercase tracking-widest">
               🗳️ Community Wishlist
             </div>
-            <h1 className="text-4xl font-extrabold text-gray-900 mb-3">
+            <h1 className="text-4xl font-extrabold text-fg mb-3">
               What tools do you need?
             </h1>
-            <p className="text-lg text-gray-500 max-w-xl mx-auto">
+            <p className="text-lg text-fg-muted max-w-xl mx-auto">
               Request tools you want added to the directory. Upvote what others have asked for — we add the most-wanted tools first.
             </p>
           </div>

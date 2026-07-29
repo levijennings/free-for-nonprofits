@@ -68,8 +68,8 @@ export default function ToolLogo({ src, alt, className = '', websiteUrl }: Props
 
   if (index >= candidates.length) {
     return (
-      <div className={`${className} bg-brand-50 flex items-center justify-center rounded-xl`}>
-        <span className="text-brand-600 font-bold text-lg">{getInitial(alt)}</span>
+      <div className={`${className} bg-accent-subtle flex items-center justify-center rounded-xl`}>
+        <span className="text-accent font-bold text-lg">{getInitial(alt)}</span>
       </div>
     )
   }

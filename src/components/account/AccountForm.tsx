@@ -53,37 +53,37 @@ export default function AccountForm({ initial }: Props) {
 
   return (
     <div className="space-y-6">
-      <section className="bg-white rounded-2xl border border-gray-100 p-6">
-        <h2 className="font-bold text-gray-900 mb-1">Organization</h2>
-        <p className="text-sm text-gray-400 mb-5">
+      <section className="bg-surface rounded-2xl border border-line p-6">
+        <h2 className="font-bold text-fg mb-1">Organization</h2>
+        <p className="text-sm text-fg-subtle mb-5">
           Shown to other nonprofits on your reviews and activity in the community feed.
         </p>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Organization name</label>
+            <label className="block text-sm font-medium text-fg-muted mb-1.5">Organization name</label>
             <input
               type="text"
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
               placeholder="Habitat for Humanity Chicago"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 border border-line rounded-lg text-sm bg-surface text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Your name</label>
+            <label className="block text-sm font-medium text-fg-muted mb-1.5">Your name</label>
             <input
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Jane Doe"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 border border-line rounded-lg text-sm bg-surface text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Organization size</label>
+            <label className="block text-sm font-medium text-fg-muted mb-2">Organization size</label>
             <div className="grid grid-cols-3 gap-2">
               {ORG_SIZES.map((o) => {
                 const selected = orgSize === o.value
@@ -94,8 +94,8 @@ export default function AccountForm({ initial }: Props) {
                     onClick={() => setOrgSize(o.value)}
                     className={`px-3 py-2.5 rounded-xl border text-xs font-medium text-center transition-all ${
                       selected
-                        ? 'bg-brand-50 border-brand-300 text-brand-800'
-                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                        ? 'bg-accent-subtle border-accent-line text-accent'
+                        : 'bg-surface border-line text-fg-muted hover:border-line-strong hover:bg-surface-subtle'
                     }`}
                   >
                     {o.label}
@@ -111,13 +111,13 @@ export default function AccountForm({ initial }: Props) {
         <button
           onClick={save}
           disabled={status === 'saving'}
-          className="px-8 py-3 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors text-sm"
+          className="px-8 py-3 bg-accent hover:bg-accent-hover disabled:opacity-50 text-accent-fg font-semibold rounded-xl transition-colors duration-fast text-sm"
         >
           {status === 'saving' ? 'Saving…' : 'Save changes'}
         </button>
 
-        {status === 'saved' && <span className="text-sm text-green-600 font-medium">✓ Saved!</span>}
-        {status === 'error' && <span className="text-sm text-red-500">{error}</span>}
+        {status === 'saved' && <span className="text-sm text-status-done font-medium">✓ Saved!</span>}
+        {status === 'error' && <span className="text-sm text-status-warn">{error}</span>}
       </div>
     </div>
   )

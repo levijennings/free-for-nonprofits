@@ -40,8 +40,8 @@ export default function DeleteUserButton({ userId, label, compact = false, onDel
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true) }}
         className={
           compact
-            ? 'text-xs px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg transition-colors font-medium shrink-0'
-            : 'w-full py-2.5 text-sm font-medium text-red-600 border border-red-200 rounded-xl hover:bg-red-50 transition-colors'
+            ? 'text-xs px-2.5 py-1 bg-status-warn-bg hover:brightness-95 text-status-warn border border-status-warn/30 rounded-lg transition-colors duration-fast font-medium shrink-0'
+            : 'w-full py-2.5 text-sm font-medium text-status-warn border border-status-warn/30 rounded-xl hover:bg-status-warn-bg transition-colors duration-fast'
         }
       >
         Delete user
@@ -55,20 +55,20 @@ export default function DeleteUserButton({ userId, label, compact = false, onDel
       className={compact ? 'flex items-center gap-2 shrink-0' : 'space-y-2'}
     >
       {!compact && (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-fg-subtle">
           Permanently delete <strong>{label}</strong> and all of their saved tools, favorites, reviews, and
           preferences? Their public tool submissions and requests stay, with the author cleared. This can&apos;t be undone.
         </p>
       )}
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-status-warn">{error}</p>}
       <div className="flex gap-2">
         <button
           onClick={confirmDelete}
           disabled={loading}
           className={
             compact
-              ? 'text-xs px-2.5 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium disabled:opacity-50'
-              : 'flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50'
+              ? 'text-xs px-2.5 py-1 bg-status-warn hover:brightness-90 text-white rounded-lg font-medium disabled:opacity-50'
+              : 'flex-1 py-2.5 bg-status-warn hover:brightness-90 text-white text-sm font-semibold rounded-xl transition-colors duration-fast disabled:opacity-50'
           }
         >
           {loading ? '…' : compact ? `Confirm delete` : 'Confirm delete'}
@@ -77,8 +77,8 @@ export default function DeleteUserButton({ userId, label, compact = false, onDel
           onClick={() => setOpen(false)}
           className={
             compact
-              ? 'text-xs px-2.5 py-1 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50'
-              : 'px-4 py-2.5 border border-gray-200 text-sm text-gray-500 rounded-xl hover:bg-gray-50 transition-colors'
+              ? 'text-xs px-2.5 py-1 border border-line rounded-lg text-fg-subtle hover:bg-surface-subtle'
+              : 'px-4 py-2.5 border border-line text-sm text-fg-subtle rounded-xl hover:bg-surface-subtle transition-colors duration-fast'
           }
         >
           Cancel

@@ -69,31 +69,31 @@ export default async function HomePage() {
       <EligibilityHero toolCount={toolCount ?? null} gatedCount={gatedCount ?? null} />
 
       {/* Browse by category */}
-      <section className="py-12 bg-white">
+      <section className="py-12 bg-surface">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Find resources by type</h2>
-            <p className="text-gray-500 mt-1">Software, grants, training, pro bono services, and more</p>
+            <h2 className="text-2xl font-bold text-fg">Find resources by type</h2>
+            <p className="text-fg-muted mt-1">Software, grants, training, pro bono services, and more</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {categories?.map((cat) => {
-              const iconColor = categoryIconColors[cat.slug] ?? 'bg-gray-100 text-gray-600'
+              const iconColor = categoryIconColors[cat.slug] ?? 'bg-surface-inset text-fg-muted'
               return (
                 <Link
                   key={cat.slug}
                   href={`/tools?category=${cat.slug}`}
-                  className="group flex items-center gap-3 p-3.5 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 rounded-xl transition-all hover:shadow-sm"
+                  className="group flex items-center gap-3 p-3.5 bg-surface hover:bg-surface-subtle border border-line hover:border-line-strong rounded-xl transition-all hover:shadow-1"
                 >
                   <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-lg ${iconColor}`}>
                     {cat.icon}
                   </div>
-                  <span className="text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors leading-tight">{cat.name}</span>
+                  <span className="text-sm font-semibold text-fg-muted group-hover:text-fg transition-colors leading-tight">{cat.name}</span>
                 </Link>
               )
             })}
           </div>
           <div className="mt-5">
-            <Link href="/tools" className="text-brand-600 font-semibold hover:text-brand-700 transition-colors text-sm">
+            <Link href="/tools" className="text-accent font-semibold hover:text-accent-hover transition-colors text-sm">
               View all categories →
             </Link>
           </div>
@@ -101,14 +101,14 @@ export default async function HomePage() {
       </section>
 
       {/* Featured resources */}
-      <section className="py-12 bg-gray-50 border-t border-gray-100">
+      <section className="py-12 bg-surface-subtle border-t border-line">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Featured resources</h2>
-              <p className="text-gray-500 mt-1">Curated picks trusted by nonprofits worldwide</p>
+              <h2 className="text-2xl font-bold text-fg">Featured resources</h2>
+              <p className="text-fg-muted mt-1">Curated picks trusted by nonprofits worldwide</p>
             </div>
-            <Link href="/tools" className="hidden sm:block text-brand-600 font-semibold hover:text-brand-700 transition-colors text-sm shrink-0 ml-4">
+            <Link href="/tools" className="hidden sm:block text-accent font-semibold hover:text-accent-hover transition-colors text-sm shrink-0 ml-4">
               View all →
             </Link>
           </div>
@@ -118,7 +118,7 @@ export default async function HomePage() {
               <Link
                 key={tool.id}
                 href={`/tools/${tool.slug}`}
-                className="group bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md hover:border-brand-200 hover:-translate-y-0.5 transition-all flex flex-col gap-3"
+                className="group bg-surface rounded-xl border border-line p-5 hover:shadow-2 hover:border-accent-line hover:-translate-y-0.5 transition-all flex flex-col gap-3"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3 min-w-0">
@@ -126,30 +126,30 @@ export default async function HomePage() {
                       <ToolLogo
                         src={tool.logo_url}
                         alt={tool.name}
-                        className="w-10 h-10 rounded-lg object-contain border border-gray-100 p-1 bg-white shrink-0"
+                        className="w-10 h-10 rounded-lg object-contain border border-line p-1 bg-surface shrink-0"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-lg bg-brand-100 flex items-center justify-center shrink-0">
-                        <span className="text-brand-700 font-bold text-sm">{tool.name[0]}</span>
+                      <div className="w-10 h-10 rounded-lg bg-accent-subtle flex items-center justify-center shrink-0">
+                        <span className="text-accent font-bold text-sm">{tool.name[0]}</span>
                       </div>
                     )}
-                    <h3 className="font-semibold text-gray-900 group-hover:text-brand-700 transition-colors leading-tight">{tool.name}</h3>
+                    <h3 className="font-semibold text-fg group-hover:text-accent transition-colors leading-tight">{tool.name}</h3>
                   </div>
-                  <span className={`shrink-0 text-xs font-semibold px-2 py-1 rounded-full ${pricingColors[tool.pricing_model] ?? 'bg-gray-100 text-gray-700'}`}>
+                  <span className={`shrink-0 text-xs font-semibold px-2 py-1 rounded-full ${pricingColors[tool.pricing_model] ?? 'bg-surface-inset text-fg-muted'}`}>
                     {pricingLabels[tool.pricing_model] ?? tool.pricing_model}
                   </span>
                 </div>
 
-                <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">{tool.description}</p>
+                <p className="text-sm text-fg-subtle line-clamp-2 leading-relaxed">{tool.description}</p>
 
                 {tool.nonprofit_deal && (
-                  <div className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-2.5 py-1.5 line-clamp-2 leading-relaxed">
+                  <div className="text-xs text-accent bg-accent-subtle border border-accent-line rounded-lg px-2.5 py-1.5 line-clamp-2 leading-relaxed">
                     🎁 {tool.nonprofit_deal}
                   </div>
                 )}
 
                 <div className="mt-auto flex justify-end">
-                  <span className="text-xs font-semibold text-brand-600 group-hover:translate-x-0.5 transition-transform">
+                  <span className="text-xs font-semibold text-accent group-hover:translate-x-0.5 transition-transform">
                     Learn more →
                   </span>
                 </div>
@@ -160,7 +160,7 @@ export default async function HomePage() {
           <div className="mt-8">
             <Link
               href="/tools"
-              className="inline-block px-7 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
+              className="inline-block px-7 py-3 bg-accent hover:bg-accent-hover text-accent-fg font-bold rounded-xl transition-all shadow-1 hover:shadow-2 hover:-translate-y-0.5"
             >
               Browse all {toolCount ?? '89'}+ resources →
             </Link>
@@ -169,25 +169,25 @@ export default async function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-br from-brand-600 to-brand-800">
+      <section className="py-20 bg-gradient-to-br from-accent to-accent-hover">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-accent-fg mb-4">
             Your nonprofit deserves great software
           </h2>
-          <p className="text-brand-100 text-lg mb-10 leading-relaxed max-w-2xl mx-auto">
+          <p className="text-accent-fg/85 text-lg mb-10 leading-relaxed max-w-2xl mx-auto">
             Create a free account to save resources, track what your team uses, and get notified
             when new nonprofit deals are added.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/signup"
-              className="px-8 py-4 bg-white hover:bg-gray-50 text-brand-700 font-bold rounded-xl transition-all text-lg shadow-md hover:shadow-lg hover:-translate-y-0.5"
+              className="px-8 py-4 bg-surface hover:bg-surface-subtle text-accent font-bold rounded-xl transition-all text-lg shadow-2 hover:shadow-3 hover:-translate-y-0.5"
             >
               Create free account
             </Link>
             <Link
               href="/tools"
-              className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-colors text-lg border border-white/25"
+              className="px-8 py-4 bg-accent-fg/10 hover:bg-accent-fg/20 text-accent-fg font-semibold rounded-xl transition-colors text-lg border border-accent-fg/25"
             >
               Browse resources first
             </Link>

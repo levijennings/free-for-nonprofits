@@ -105,7 +105,7 @@ function CopyButton({ value, label }: { value: string; label?: string }) {
   return (
     <button
       onClick={copy}
-      className="inline-flex items-center gap-1 text-xs font-mono text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded px-1.5 py-0.5 transition-colors"
+      className="inline-flex items-center gap-1 text-xs font-mono text-fg-subtle hover:text-fg hover:bg-surface-inset rounded px-1.5 py-0.5 transition-colors"
     >
       {copied ? '✓ copied' : (label ?? value)}
     </button>
@@ -114,7 +114,7 @@ function CopyButton({ value, label }: { value: string; label?: string }) {
 
 export default function MediaKitPage() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-surface">
 
         {/* Hero */}
         <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-brand-900 text-white py-20">
@@ -150,28 +150,28 @@ export default function MediaKitPage() {
 
           {/* About the brand */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">About Free For NonProfits</h2>
-            <p className="text-gray-500 text-sm mb-6">For use in articles, partner pages, and press mentions.</p>
+            <h2 className="text-2xl font-bold text-fg mb-2">About Free For NonProfits</h2>
+            <p className="text-fg-muted text-sm mb-6">For use in articles, partner pages, and press mentions.</p>
             <div className="grid sm:grid-cols-2 gap-4">
-              <div className="bg-gray-50 rounded-2xl p-6">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Short description</p>
-                <p className="text-gray-800 text-sm leading-relaxed">
+              <div className="bg-surface-subtle rounded-2xl p-6">
+                <p className="text-xs font-semibold text-fg-subtle uppercase tracking-widest mb-3">Short description</p>
+                <p className="text-fg text-sm leading-relaxed">
                   Free For NonProfits is a curated directory of free and discounted software tools available to registered nonprofits — most of which organizations never find out about.
                 </p>
                 <CopyButton value="Free For NonProfits is a curated directory of free and discounted software tools available to registered nonprofits — most of which organizations never find out about." label="Copy text" />
               </div>
-              <div className="bg-gray-50 rounded-2xl p-6">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">One-liner</p>
-                <p className="text-gray-800 text-sm leading-relaxed">
+              <div className="bg-surface-subtle rounded-2xl p-6">
+                <p className="text-xs font-semibold text-fg-subtle uppercase tracking-widest mb-3">One-liner</p>
+                <p className="text-fg text-sm leading-relaxed">
                   Free software your nonprofit already qualifies for.
                 </p>
                 <div className="mt-3">
                   <CopyButton value="Free software your nonprofit already qualifies for." label="Copy text" />
                 </div>
               </div>
-              <div className="bg-gray-50 rounded-2xl p-6 sm:col-span-2">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Long description</p>
-                <p className="text-gray-800 text-sm leading-relaxed">
+              <div className="bg-surface-subtle rounded-2xl p-6 sm:col-span-2">
+                <p className="text-xs font-semibold text-fg-subtle uppercase tracking-widest mb-3">Long description</p>
+                <p className="text-fg text-sm leading-relaxed">
                   Most nonprofits leave over $50,000 per year in free software unclaimed. Google gives nonprofits $10,000/month in free ads. Salesforce provides 10 free licenses. Zendesk, Miro, Loom, Canva, and 50+ others offer free or deeply discounted plans — and most nonprofit staff never find out. Free For NonProfits is a community-verified directory that surfaces these deals and helps nonprofit teams build a full software stack without the budget.
                 </p>
                 <div className="mt-3">
@@ -183,23 +183,23 @@ export default function MediaKitPage() {
 
           {/* Logo downloads */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Logo</h2>
-            <p className="text-gray-500 text-sm mb-6">Download SVG files for any use. Do not modify the logo colors or proportions.</p>
+            <h2 className="text-2xl font-bold text-fg mb-2">Logo</h2>
+            <p className="text-fg-muted text-sm mb-6">Download SVG files for any use. Do not modify the logo colors or proportions.</p>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {logoDownloads.map((item) => (
-                <div key={item.label} className="border border-gray-100 rounded-2xl overflow-hidden">
+                <div key={item.label} className="border border-line rounded-2xl overflow-hidden">
                   <div className={`${item.bg} h-28 flex items-center justify-center`}>
                     {item.preview}
                   </div>
-                  <div className="p-4 bg-white flex items-center justify-between gap-3">
+                  <div className="p-4 bg-surface flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">{item.label}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{item.description}</p>
+                      <p className="text-sm font-semibold text-fg">{item.label}</p>
+                      <p className="text-xs text-fg-subtle mt-0.5">{item.description}</p>
                     </div>
                     <a
                       href={item.file}
                       download
-                      className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-800 border border-brand-200 hover:border-brand-400 rounded-lg px-3 py-1.5 transition-colors"
+                      className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-accent hover:text-accent-hover border border-accent-line hover:border-accent rounded-lg px-3 py-1.5 transition-colors"
                     >
                       ↓ SVG
                     </a>
@@ -235,16 +235,16 @@ export default function MediaKitPage() {
 
           {/* Brand colors */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Brand colors</h2>
-            <p className="text-gray-500 text-sm mb-6">Click any hex value to copy it.</p>
+            <h2 className="text-2xl font-bold text-fg mb-2">Brand colors</h2>
+            <p className="text-fg-muted text-sm mb-6">Click any hex value to copy it.</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {brandColors.map((color) => (
-                <div key={color.hex} className="rounded-2xl overflow-hidden border border-gray-100">
+                <div key={color.hex} className="rounded-2xl overflow-hidden border border-line">
                   <div className={`${color.bg} h-16`} />
-                  <div className="p-3 bg-white">
-                    <p className="text-xs font-semibold text-gray-900">{color.name}</p>
+                  <div className="p-3 bg-surface">
+                    <p className="text-xs font-semibold text-fg">{color.name}</p>
                     <CopyButton value={color.hex} />
-                    <p className="text-[10px] text-gray-400 mt-1">{color.use}</p>
+                    <p className="text-[10px] text-fg-subtle mt-1">{color.use}</p>
                   </div>
                 </div>
               ))}
@@ -253,10 +253,10 @@ export default function MediaKitPage() {
 
           {/* Typography */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Typography</h2>
-            <p className="text-gray-500 text-sm mb-6">
+            <h2 className="text-2xl font-bold text-fg mb-2">Typography</h2>
+            <p className="text-fg-muted text-sm mb-6">
               Our typeface is <strong>Plus Jakarta Sans</strong> by Tokotype — available free on{' '}
-              <a href="https://fonts.google.com/specimen/Plus+Jakarta+Sans" target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline">Google Fonts</a>.
+              <a href="https://fonts.google.com/specimen/Plus+Jakarta+Sans" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Google Fonts</a>.
             </p>
             <div className="space-y-4">
               {[
@@ -266,11 +266,11 @@ export default function MediaKitPage() {
                 { label: 'Body', weight: 'font-normal', size: 'text-base', sample: 'Most nonprofits leave $50,000+/year in free software unclaimed. Browse our directory to find tools your organization already qualifies for.' },
                 { label: 'Small / Caption', weight: 'font-medium', size: 'text-sm', sample: 'Free · Verified · Nonprofit-approved' },
               ].map((t) => (
-                <div key={t.label} className="bg-gray-50 rounded-2xl p-6 flex items-start gap-6">
+                <div key={t.label} className="bg-surface-subtle rounded-2xl p-6 flex items-start gap-6">
                   <div className="shrink-0 w-28">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{t.label}</p>
+                    <p className="text-xs font-semibold text-fg-subtle uppercase tracking-widest">{t.label}</p>
                   </div>
-                  <p className={`${t.size} ${t.weight} text-gray-900 leading-tight flex-1`}>{t.sample}</p>
+                  <p className={`${t.size} ${t.weight} text-fg leading-tight flex-1`}>{t.sample}</p>
                 </div>
               ))}
             </div>
@@ -278,8 +278,8 @@ export default function MediaKitPage() {
 
           {/* Boilerplate & links */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Linking to us</h2>
-            <p className="text-gray-500 text-sm mb-6">Use these when referencing Free For NonProfits in articles, blog posts, or partner pages.</p>
+            <h2 className="text-2xl font-bold text-fg mb-2">Linking to us</h2>
+            <p className="text-fg-muted text-sm mb-6">Use these when referencing Free For NonProfits in articles, blog posts, or partner pages.</p>
             <div className="grid sm:grid-cols-2 gap-4">
               {[
                 { label: 'Website', value: 'https://free-for-nonprofits.vercel.app' },
@@ -287,10 +287,10 @@ export default function MediaKitPage() {
                 { label: 'Preferred name (short)', value: 'FreeForNonprofits' },
                 { label: 'Partnership / press contact', value: 'levi@dvlmnt.com' },
               ].map((item) => (
-                <div key={item.label} className="bg-gray-50 rounded-xl p-4 flex items-center justify-between gap-3">
+                <div key={item.label} className="bg-surface-subtle rounded-xl p-4 flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">{item.label}</p>
-                    <p className="text-sm font-mono text-gray-800">{item.value}</p>
+                    <p className="text-xs font-semibold text-fg-subtle uppercase tracking-widest mb-1">{item.label}</p>
+                    <p className="text-sm font-mono text-fg">{item.value}</p>
                   </div>
                   <CopyButton value={item.value} label="Copy" />
                 </div>
@@ -299,16 +299,16 @@ export default function MediaKitPage() {
           </section>
 
           {/* Partner CTA */}
-          <section className="bg-gradient-to-br from-brand-600 to-teal-700 rounded-3xl p-10 text-white text-center relative overflow-hidden">
+          <section className="bg-gradient-to-br from-accent to-accent-hover rounded-3xl p-10 text-accent-fg text-center relative overflow-hidden">
             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '24px 24px' }} />
             <div className="relative">
               <h2 className="text-2xl font-bold mb-3">Want to be a partner?</h2>
-              <p className="text-white/75 mb-6 max-w-md mx-auto text-sm leading-relaxed">
+              <p className="text-accent-fg/75 mb-6 max-w-md mx-auto text-sm leading-relaxed">
                 We partner with software companies, nonprofit networks, and mission-driven organizations. Reach out to discuss co-promotion, featured listings, or newsletter collaborations.
               </p>
               <a
                 href="mailto:levi@dvlmnt.com"
-                className="inline-flex items-center gap-2 bg-white text-brand-700 font-semibold text-sm px-6 py-3 rounded-xl hover:bg-brand-50 transition-colors shadow"
+                className="inline-flex items-center gap-2 bg-surface text-accent font-semibold text-sm px-6 py-3 rounded-xl hover:bg-surface-subtle transition-colors shadow-2"
               >
                 Get in touch →
               </a>

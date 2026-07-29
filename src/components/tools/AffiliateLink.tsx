@@ -30,12 +30,12 @@ export default function AffiliateLink({ toolId, toolName, websiteUrl, affiliateU
         target="_blank"
         rel="noopener noreferrer"
         onClick={handleClick}
-        className="block w-full py-3 text-center bg-brand-500 hover:bg-brand-700 text-white font-semibold rounded-xl transition-colors"
+        className="block w-full py-3 text-center bg-accent hover:bg-accent-hover text-accent-fg font-semibold rounded-xl transition-colors duration-fast"
       >
         Visit {toolName} →
       </a>
 
-      <p className="mt-3 text-center text-xs text-gray-400">
+      <p className="mt-3 text-center text-xs text-fg-subtle">
         {isAffiliate
           ? 'Affiliate link — we may earn a small commission at no cost to you'
           : 'Opens official website'}

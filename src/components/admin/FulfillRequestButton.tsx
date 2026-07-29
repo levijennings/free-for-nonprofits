@@ -35,7 +35,7 @@ export default function FulfillRequestButton({ requestId, requestName }: Props) 
     return (
       <button
         onClick={() => setOpen(true)}
-        className="text-xs px-2.5 py-1 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-lg transition-colors font-medium"
+        className="text-xs px-2.5 py-1 bg-status-done-bg hover:bg-accent-subtle text-status-done border border-accent-line rounded-lg transition-colors duration-fast font-medium"
       >
         Mark fulfilled
       </button>
@@ -48,18 +48,18 @@ export default function FulfillRequestButton({ requestId, requestName }: Props) 
         value={toolSlug}
         onChange={e => setToolSlug(e.target.value)}
         placeholder={`Tool slug for "${requestName}"…`}
-        className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-green-300"
+        className="w-full text-xs border border-line rounded-lg px-2.5 py-1.5 bg-surface text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-1 focus:ring-focus"
       />
-      {error && <p className="text-[10px] text-red-500">{error}</p>}
+      {error && <p className="text-[10px] text-status-warn">{error}</p>}
       <div className="flex gap-2">
         <button
           onClick={fulfill}
           disabled={loading}
-          className="flex-1 text-xs py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium disabled:opacity-50"
+          className="flex-1 text-xs py-1.5 bg-accent hover:bg-accent-hover text-accent-fg rounded-lg font-medium disabled:opacity-50"
         >
           {loading ? '…' : 'Confirm'}
         </button>
-        <button onClick={() => setOpen(false)} className="text-xs px-3 py-1.5 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50">
+        <button onClick={() => setOpen(false)} className="text-xs px-3 py-1.5 border border-line rounded-lg text-fg-subtle hover:bg-surface-subtle">
           Cancel
         </button>
       </div>

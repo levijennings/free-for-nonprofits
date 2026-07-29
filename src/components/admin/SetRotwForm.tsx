@@ -65,15 +65,15 @@ export default function SetRotwForm({ current }: { current: CurrentRotw | null }
     <div className="space-y-5">
       {/* Tool picker */}
       <div>
-        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Tool</label>
+        <label className="block text-xs font-semibold text-fg-subtle uppercase tracking-widest mb-1.5">Tool</label>
         <div className="relative" ref={dropdownRef}>
           {selected ? (
-            <div className="flex items-center gap-3 p-3 border border-brand-300 bg-brand-50 rounded-xl">
+            <div className="flex items-center gap-3 p-3 border border-accent-line bg-accent-subtle rounded-xl">
               {selected.logo_url && (
                 <Image src={selected.logo_url} alt={selected.name} width={28} height={28} className="rounded-md object-contain" />
               )}
-              <span className="font-semibold text-gray-900 flex-1">{selected.name}</span>
-              <button onClick={() => { setSelected(null); setQuery('') }} className="text-xs text-gray-400 hover:text-red-500 transition-colors">✕ Change</button>
+              <span className="font-semibold text-fg flex-1">{selected.name}</span>
+              <button onClick={() => { setSelected(null); setQuery('') }} className="text-xs text-fg-subtle hover:text-status-warn transition-colors duration-fast">✕ Change</button>
             </div>
           ) : (
             <input
@@ -82,20 +82,20 @@ export default function SetRotwForm({ current }: { current: CurrentRotw | null }
               value={query}
               onChange={e => setQuery(e.target.value)}
               onFocus={() => query && setOpen(true)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 bg-white"
+              className="w-full border border-line rounded-xl px-4 py-2.5 text-sm bg-surface text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-focus"
             />
           )}
           {open && results.length > 0 && !selected && (
-            <div className="absolute z-10 mt-1 w-full bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden">
+            <div className="absolute z-10 mt-1 w-full bg-surface border border-line rounded-xl shadow-2 overflow-hidden">
               {results.map(t => (
                 <button
                   key={t.id}
                   onClick={() => { setSelected(t); setOpen(false); setQuery('') }}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-surface-subtle transition-colors duration-fast text-left"
                 >
                   {t.logo_url && <Image src={t.logo_url} alt={t.name} width={22} height={22} className="rounded object-contain shrink-0" />}
-                  <span className="text-sm font-medium text-gray-900 flex-1">{t.name}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${pricingBadge[t.pricing_model] ?? 'bg-gray-100 text-gray-600'}`}>
+                  <span className="text-sm font-medium text-fg flex-1">{t.name}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${pricingBadge[t.pricing_model] ?? 'bg-surface-inset text-fg-muted'}`}>
                     {t.pricing_model.replace('_', ' ')}
                   </span>
                 </button>
@@ -107,34 +107,34 @@ export default function SetRotwForm({ current }: { current: CurrentRotw | null }
 
       {/* Week start */}
       <div>
-        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Week start (Monday)</label>
+        <label className="block text-xs font-semibold text-fg-subtle uppercase tracking-widest mb-1.5">Week start (Monday)</label>
         <input
           type="date"
           value={weekStart}
           onChange={e => setWeekStart(e.target.value)}
-          className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 bg-white"
+          className="border border-line rounded-xl px-4 py-2.5 text-sm bg-surface text-fg focus:outline-none focus:ring-2 focus:ring-focus"
         />
       </div>
 
       {/* Blurb */}
       <div>
-        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">
-          Editorial blurb <span className="text-gray-300 normal-case font-normal">(also used in newsletter)</span>
+        <label className="block text-xs font-semibold text-fg-subtle uppercase tracking-widest mb-1.5">
+          Editorial blurb <span className="text-fg-subtle normal-case font-normal">(also used in newsletter)</span>
         </label>
         <textarea
           rows={4}
           value={blurb}
           onChange={e => setBlurb(e.target.value)}
           placeholder="Why is this tool especially valuable for nonprofits this week?"
-          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 bg-white resize-none leading-relaxed"
+          className="w-full border border-line rounded-xl px-4 py-3 text-sm bg-surface text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-focus resize-none leading-relaxed"
         />
-        <p className="text-xs text-gray-400 mt-1">{blurb.length} chars</p>
+        <p className="text-xs text-fg-subtle mt-1">{blurb.length} chars</p>
       </div>
 
       <button
         onClick={save}
         disabled={!selected || status === 'saving'}
-        className="flex items-center gap-2 px-5 py-2.5 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition-colors"
+        className="flex items-center gap-2 px-5 py-2.5 bg-accent hover:bg-accent-hover disabled:opacity-50 text-accent-fg font-semibold text-sm rounded-xl transition-colors duration-fast"
       >
         {status === 'saving' ? 'Saving…' : status === 'saved' ? '✓ Saved!' : status === 'error' ? 'Error — try again' : 'Set Resource of the Week'}
       </button>

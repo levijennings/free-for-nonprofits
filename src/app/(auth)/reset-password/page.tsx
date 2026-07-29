@@ -31,18 +31,18 @@ export default function ResetPasswordPage() {
 
   if (sent) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+      <div className="min-h-screen bg-surface-subtle flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-surface rounded-2xl shadow-1 border border-line p-8 text-center">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h2>
-          <p className="text-gray-600 mb-6">
+          <h2 className="text-2xl font-bold text-fg mb-2">Check your email</h2>
+          <p className="text-fg-muted mb-6">
             We sent a password reset link to <strong>{email}</strong>.
           </p>
-          <Link href="/login" className="text-brand-500 font-medium hover:text-brand-700 transition-colors">
+          <Link href="/login" className="text-accent font-medium hover:text-accent-hover transition-colors">
             Back to sign in →
           </Link>
         </div>
@@ -51,11 +51,11 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-surface-subtle flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shadow-sm shrink-0">
+            <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shadow-1 shrink-0">
               <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
                 <path
                   fillRule="evenodd"
@@ -66,20 +66,20 @@ export default function ResetPasswordPage() {
               </svg>
             </div>
             <div className="leading-none text-left">
-              <div className="text-[9px] font-bold text-gray-400 tracking-[0.18em] uppercase">Free For</div>
-              <div className="text-[17px] font-extrabold tracking-tight text-gray-900 -mt-0.5">
-                Non<span className="text-brand-600">Profits</span>
+              <div className="text-[9px] font-bold text-fg-subtle tracking-[0.18em] uppercase">Free For</div>
+              <div className="text-[17px] font-extrabold tracking-tight text-fg -mt-0.5">
+                Non<span className="text-accent">Profits</span>
               </div>
             </div>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Reset password</h1>
-          <p className="mt-2 text-gray-500">We&apos;ll send you a reset link</p>
+          <h1 className="text-3xl font-bold text-fg">Reset password</h1>
+          <p className="mt-2 text-fg-muted">We&apos;ll send you a reset link</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="bg-surface rounded-2xl shadow-1 border border-line p-8">
           <form onSubmit={handleReset} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-fg mb-1.5">Email</label>
               <input
                 type="email"
                 required
@@ -87,7 +87,7 @@ export default function ResetPasswordPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@yournonprofit.org"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
               />
             </div>
 
@@ -100,14 +100,14 @@ export default function ResetPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-brand-500 hover:bg-brand-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+              className="w-full py-3 bg-accent hover:bg-accent-hover text-accent-fg font-semibold rounded-lg transition-colors disabled:opacity-50"
             >
               {loading ? 'Sending...' : 'Send reset link'}
             </button>
           </form>
 
           <div className="mt-6 text-center">
-            <Link href="/login" className="text-sm text-brand-500 font-medium hover:text-brand-700 transition-colors">
+            <Link href="/login" className="text-sm text-accent font-medium hover:text-accent-hover transition-colors">
               ← Back to sign in
             </Link>
           </div>

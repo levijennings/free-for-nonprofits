@@ -33,8 +33,8 @@ export interface SurveyData {
   budget: string
 }
 
-const SELECT_CLASS = 'w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent'
-const TEXT_CLASS = 'w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent'
+const SELECT_CLASS = 'w-full px-3.5 py-2.5 text-sm border border-line rounded-xl bg-surface text-fg focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent'
+const TEXT_CLASS = 'w-full px-3.5 py-2.5 text-sm border border-line rounded-xl bg-surface text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent'
 
 export default function SurveyForm({ initial }: { initial: SurveyData }) {
   const router = useRouter()
@@ -69,31 +69,31 @@ export default function SurveyForm({ initial }: { initial: SurveyData }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
+      <div className="bg-surface rounded-2xl border border-line p-6 space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">What's your mission area?</label>
+            <label className="block text-sm font-semibold text-fg-muted mb-1.5">What's your mission area?</label>
             <select value={form.mission_area} onChange={e => set('mission_area', e.target.value)} className={SELECT_CLASS}>
               <option value="">Select…</option>
               {MISSION_AREAS.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Team size</label>
+            <label className="block text-sm font-semibold text-fg-muted mb-1.5">Team size</label>
             <select value={form.team_size} onChange={e => set('team_size', e.target.value)} className={SELECT_CLASS}>
               <option value="">Select…</option>
               {TEAM_SIZES.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Your role</label>
+            <label className="block text-sm font-semibold text-fg-muted mb-1.5">Your role</label>
             <select value={form.role} onChange={e => set('role', e.target.value)} className={SELECT_CLASS}>
               <option value="">Select…</option>
               {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Monthly software budget</label>
+            <label className="block text-sm font-semibold text-fg-muted mb-1.5">Monthly software budget</label>
             <select value={form.budget} onChange={e => set('budget', e.target.value)} className={SELECT_CLASS}>
               <option value="">Select…</option>
               {BUDGETS.map(b => <option key={b} value={b}>{b}</option>)}
@@ -102,7 +102,7 @@ export default function SurveyForm({ initial }: { initial: SurveyData }) {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Which areas do you most need tools for?</label>
+          <label className="block text-sm font-semibold text-fg-muted mb-2">Which areas do you most need tools for?</label>
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map(c => {
               const on = form.need_areas.includes(c.slug)
@@ -111,7 +111,7 @@ export default function SurveyForm({ initial }: { initial: SurveyData }) {
                   key={c.slug}
                   type="button"
                   onClick={() => toggleNeed(c.slug)}
-                  className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${on ? 'bg-brand-600 border-brand-600 text-white' : 'bg-white border-gray-200 text-gray-700 hover:border-brand-300'}`}
+                  className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${on ? 'bg-accent border-accent text-accent-fg' : 'bg-surface border-line text-fg-muted hover:border-accent-line'}`}
                 >
                   {c.icon} {c.name}
                 </button>
@@ -121,12 +121,12 @@ export default function SurveyForm({ initial }: { initial: SurveyData }) {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1.5">What tools does your team use today? <span className="font-normal text-gray-400">(optional)</span></label>
+          <label className="block text-sm font-semibold text-fg-muted mb-1.5">What tools does your team use today? <span className="font-normal text-fg-subtle">(optional)</span></label>
           <input type="text" value={form.current_tools} onChange={e => set('current_tools', e.target.value)} placeholder="e.g. Mailchimp, QuickBooks, Canva" className={TEXT_CLASS} />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Biggest tech or tooling pain point? <span className="font-normal text-gray-400">(optional)</span></label>
+          <label className="block text-sm font-semibold text-fg-muted mb-1.5">Biggest tech or tooling pain point? <span className="font-normal text-fg-subtle">(optional)</span></label>
           <textarea value={form.pain_points} onChange={e => set('pain_points', e.target.value)} rows={3} maxLength={500} placeholder="What's hardest right now?" className={`${TEXT_CLASS} resize-none`} />
         </div>
       </div>
@@ -135,12 +135,12 @@ export default function SurveyForm({ initial }: { initial: SurveyData }) {
         <button
           onClick={save}
           disabled={status === 'saving'}
-          className="px-6 py-3 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-semibold rounded-xl text-sm transition-colors"
+          className="px-6 py-3 bg-accent hover:bg-accent-hover disabled:opacity-50 text-accent-fg font-semibold rounded-xl text-sm transition-colors duration-fast"
         >
           {status === 'saving' ? 'Saving…' : 'Save & personalize'}
         </button>
-        {status === 'saved' && <span className="text-sm text-green-600 font-medium">Saved — your recommendations are now tailored.</span>}
-        {status === 'error' && <span className="text-sm text-red-600 font-medium">Something went wrong. Please try again.</span>}
+        {status === 'saved' && <span className="text-sm text-status-done font-medium">Saved — your recommendations are now tailored.</span>}
+        {status === 'error' && <span className="text-sm text-status-warn font-medium">Something went wrong. Please try again.</span>}
       </div>
     </div>
   )

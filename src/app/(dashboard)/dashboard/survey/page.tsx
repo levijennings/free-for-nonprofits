@@ -36,16 +36,16 @@ export default async function SurveyPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-surface-subtle">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="flex items-center gap-3 mb-6">
-            <Link href="/dashboard" className="text-sm text-gray-400 hover:text-gray-700 transition-colors">← Dashboard</Link>
-            <span className="text-gray-200">/</span>
-            <h1 className="text-2xl font-bold text-gray-900">Personalize recommendations</h1>
+            <Link href="/dashboard" className="text-sm text-fg-subtle hover:text-fg-muted transition-colors">← Dashboard</Link>
+            <span className="text-line-strong">/</span>
+            <h1 className="text-2xl font-bold text-fg">Personalize recommendations</h1>
           </div>
 
-          <div className="bg-brand-50 border border-brand-100 rounded-2xl p-5 mb-6">
-            <p className="text-sm text-brand-800 leading-relaxed">
+          <div className="bg-accent-subtle border border-accent-line rounded-2xl p-5 mb-6">
+            <p className="text-sm text-accent leading-relaxed">
               A few optional questions help us recommend the right tools and tailor your weekly roundup. Everything here is optional — answer what's useful.
             </p>
           </div>

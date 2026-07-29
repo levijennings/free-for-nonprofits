@@ -17,6 +17,9 @@ export default function SignupPage() {
   const [captchaToken, setCaptchaToken] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // Set when the server's bot heuristics rejected us, so a false-positive human
+  // gets a way out instead of a dead end.
+  const [supportEmail, setSupportEmail] = useState('')
   const [success, setSuccess] = useState(false)
 
   const strength = getPasswordStrength(password)
@@ -36,6 +39,7 @@ export default function SignupPage() {
 
     setLoading(true)
     setError('')
+    setSupportEmail('')
 
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
@@ -54,6 +58,9 @@ export default function SignupPage() {
 
     if (!res.ok) {
       setError(data.error || 'Something went wrong. Please try again.')
+      if (data.code === 'bot_check_failed' && data.supportEmail) {
+        setSupportEmail(data.supportEmail)
+      }
       setLoading(false)
     } else {
       setSuccess(true)
@@ -123,6 +130,7 @@ export default function SignupPage() {
               </label>
               <input
                 type="text"
+                autoComplete="organization"
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
                 placeholder="Habitat for Humanity Chicago"
@@ -140,6 +148,7 @@ export default function SignupPage() {
               <input
                 type="email"
                 required
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@yournonprofit.org"
@@ -154,6 +163,7 @@ export default function SignupPage() {
               <PasswordInput
                 required
                 minLength={8}
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="At least 8 characters"
@@ -200,7 +210,15 @@ export default function SignupPage() {
 
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
-                {error}
+                <p>{error}</p>
+                {supportEmail && (
+                  <p className="mt-2">
+                    <a href={`mailto:${supportEmail}?subject=Signup%20blocked`} className="font-semibold underline">
+                      Email {supportEmail}
+                    </a>{' '}
+                    and we&apos;ll get you set up.
+                  </p>
+                )}
               </div>
             )}
 

@@ -13,6 +13,39 @@ const MAX_ATTEMPTS_PER_DAY = 15
 // submit. Bots that fill and submit the form immediately land under this.
 const MIN_FILL_TIME_MS = 1200
 
+/**
+ * Reject a submission the bot heuristics flagged.
+ *
+ * These checks are heuristics, so they will occasionally catch a real person
+ * (an aggressive password manager filling the hidden field, a fast form
+ * autofill). Returning `{ ok: true }` here — as this route used to — told that
+ * person to go and check an email that was never sent, with no error, no way
+ * to retry and no record that it happened. A bot learns nothing useful from an
+ * explicit rejection that it wouldn't learn from never receiving the email, so
+ * the honest failure is strictly better.
+ *
+ * The `code` lets the client show a real error with a route to support, and
+ * the log line is the only telemetry we have for tuning these thresholds.
+ */
+function denyAsBot(reason: 'honeypot_filled' | 'fill_time_too_fast', ip: string, email: unknown) {
+  console.error('[signup] bot check rejected submission', {
+    reason,
+    ip,
+    email: typeof email === 'string' ? email : null,
+    at: new Date().toISOString(),
+  })
+
+  return NextResponse.json(
+    {
+      error:
+        "We couldn't process this signup — our automated checks flagged it. If you're a real person, please email levi@dvlmnt.com and we'll set your account up manually.",
+      code: 'bot_check_failed',
+      supportEmail: 'levi@dvlmnt.com',
+    },
+    { status: 403 }
+  )
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null)
   if (!body) return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
@@ -49,13 +82,12 @@ export async function POST(request: NextRequest) {
 
   // ---- Honeypot: real users never see or fill this field. ----
   if (typeof honeypot === 'string' && honeypot.trim().length > 0) {
-    // Return a success-shaped response so the bot has no signal it was caught.
-    return NextResponse.json({ ok: true })
+    return denyAsBot('honeypot_filled', ip, email)
   }
 
   // ---- Timing check: bots that script-fill and submit instantly. ----
   if (typeof formRenderedAt === 'number' && Date.now() - formRenderedAt < MIN_FILL_TIME_MS) {
-    return NextResponse.json({ ok: true })
+    return denyAsBot('fill_time_too_fast', ip, email)
   }
 
   // ---- Captcha (no-op until NEXT_PUBLIC_TURNSTILE_SITE_KEY / TURNSTILE_SECRET_KEY are set). ----

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import ToolLogo from '@/components/tools/ToolLogo'
+import EligibilityHero from '@/components/eligibility/EligibilityHero'
 
 const pricingColors: Record<string, string> = {
   free: 'bg-emerald-100 text-emerald-800',
@@ -52,72 +53,20 @@ export default async function HomePage() {
     .select('*', { count: 'exact', head: true })
     .eq('is_verified', true)
 
+  // The subset that actually gates on nonprofit status — i.e. the rows where
+  // "do I qualify?" is a real question. Counted live so the hero can never
+  // state a number the catalogue does not support.
+  const { count: gatedCount } = await supabase
+    .from('tools')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_verified', true)
+    .eq('requires_nonprofit_status', true)
+
   return (
     <main>
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-brand-900">
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '24px 24px' }}
-        />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
-          <div className="inline-flex items-center gap-2 bg-brand-500/20 text-brand-300 text-sm font-semibold px-4 py-1.5 rounded-full mb-8 border border-brand-500/30">
-            💰 Most nonprofits leave $50,000+/year unclaimed
-          </div>
-
-          {/* Forced break after "nonprofit" prevents "for" orphan on its own line */}
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-[1.08]">
-            Free software your{' '}
-            <span className="text-brand-400">nonprofit</span>
-            <br />
-            already qualifies for
-          </h1>
-
-          <p className="mt-7 text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
-            Google gives nonprofits $10,000/month in free ads. Salesforce gives you 10 free licenses.
-            Zendesk, Miro, Loom, and 50+ others are free or deeply discounted. Most nonprofit staff never find out.
-          </p>
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/signup"
-              className="w-full sm:w-auto px-8 py-4 bg-brand-500 hover:bg-brand-400 text-white font-bold rounded-xl transition-all text-lg shadow-lg shadow-brand-900/40 hover:shadow-xl hover:-translate-y-0.5"
-            >
-              Get started free
-            </Link>
-            <Link
-              href="/tools"
-              className="w-full sm:w-auto px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl transition-colors text-lg border border-white/20"
-            >
-              Browse tools →
-            </Link>
-          </div>
-          <p className="mt-5 text-sm text-gray-500">Free forever · No credit card required</p>
-        </div>
-      </section>
-
-      {/* Stats bar */}
-      <section className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-gray-100">
-            <div className="py-8 text-center px-4">
-              <p className="text-3xl font-extrabold text-brand-600">$120K</p>
-              <p className="text-sm text-gray-500 mt-1.5">Google Ad Grants/year</p>
-            </div>
-            <div className="py-8 text-center px-4">
-              <p className="text-3xl font-extrabold text-brand-600">$100K</p>
-              <p className="text-sm text-gray-500 mt-1.5">Zendesk value, free</p>
-            </div>
-            <div className="py-8 text-center px-4">
-              <p className="text-3xl font-extrabold text-gray-900">{toolCount ?? '89'}+</p>
-              <p className="text-sm text-gray-500 mt-1.5">Verified programs</p>
-            </div>
-            <div className="py-8 text-center px-4">
-              <p className="text-3xl font-extrabold text-gray-900">$0</p>
-              <p className="text-sm text-gray-500 mt-1.5">To access everything</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Hero — the qualifier itself, not a claim about it. Answers route to
+          /eligibility, which owns the results surface. */}
+      <EligibilityHero toolCount={toolCount ?? null} gatedCount={gatedCount ?? null} />
 
       {/* Browse by category */}
       <section className="py-12 bg-white">

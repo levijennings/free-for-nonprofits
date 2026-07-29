@@ -6,6 +6,9 @@ import {
   verificationAge,
 } from '@/lib/eligibility'
 import type { EligibilityFields } from '@/lib/eligibility'
+import { createClient } from '@/lib/supabase/server'
+import ClaimTracker from '@/components/claims/ClaimTracker'
+import type { ToolClaim } from '@/lib/claims'
 
 /**
  * What it takes to actually claim this.
@@ -15,10 +18,10 @@ import type { EligibilityFields } from '@/lib/eligibility'
  * rather than inventing plausible steps — a wrong claim guide costs someone an
  * afternoon and costs the site its credibility, which is the only asset here.
  */
-export default function ClaimGuide({
+export default async function ClaimGuide({
   tool,
 }: {
-  tool: EligibilityFields & { name: string; website_url: string | null }
+  tool: EligibilityFields & { id: string; name: string; website_url: string | null }
 }) {
   const gated = tool.requires_nonprofit_status
   const freshness = verificationAge(tool.last_verified_at)
@@ -49,6 +52,30 @@ export default function ClaimGuide({
         )}
       </section>
     )
+  }
+
+  // Claim tracking is only meaningful for a gated programme — one you apply
+  // for and wait on. `gated === null` means unclassified, and we do not invent
+  // an application process for a row we have not verified.
+  const trackable = gated === true
+
+  let user: { id: string } | null = null
+  let claim: Pick<ToolClaim, 'status' | 'note' | 'applied_at'> | null = null
+
+  if (trackable) {
+    const supabase = await createClient()
+    const { data } = await supabase.auth.getUser()
+    user = data.user ? { id: data.user.id } : null
+
+    if (user) {
+      const { data: existing } = await supabase
+        .from('tool_claims')
+        .select('status, note, applied_at')
+        .eq('user_id', user.id)
+        .eq('tool_id', tool.id)
+        .maybeSingle()
+      claim = (existing as typeof claim) ?? null
+    }
   }
 
   const facts: Array<{ label: string; value: string }> = []
@@ -158,6 +185,44 @@ export default function ClaimGuide({
           Start the application →
         </a>
       )}
+
+      {trackable &&
+        (user ? (
+          <ClaimTracker toolId={tool.id} toolName={tool.name} initialClaim={claim} />
+        ) : (
+          <div className="mt-6 rounded-md border border-line bg-surface-subtle p-4">
+            <h3 className="text-sm font-semibold text-fg">
+              This one takes weeks, not minutes
+            </h3>
+            <p className="mt-1 max-w-prose text-sm text-fg-muted">
+              {tool.name} is reviewed by a person at {tool.name}
+              {tool.time_to_claim_days
+                ? `, typically about ${tool.time_to_claim_days} ${
+                    tool.time_to_claim_days === 1 ? 'day' : 'days'
+                  } after you submit`
+                : ', and the wait is measured in weeks'}
+              . Nothing on this page can tell you where your application got to —
+              only you know that. An account is somewhere to keep it: which
+              documents you have gathered, the date you applied, how long you
+              have been waiting, and the reference number you will otherwise
+              have to dig out of your inbox.
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <Link
+                href="/signup"
+                className="inline-flex rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-fg transition-colors duration-fast hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              >
+                Track this application
+              </Link>
+              <Link
+                href="/login"
+                className="text-sm font-medium text-fg-muted underline hover:text-fg"
+              >
+                Already have an account
+              </Link>
+            </div>
+          </div>
+        ))}
 
       <p className="mt-4 text-xs text-fg-subtle">
         Terms change without notice.{' '}

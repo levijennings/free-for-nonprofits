@@ -46,6 +46,7 @@ export default function LoginPage({ searchParams }: Props) {
                 type="email"
                 name="email"
                 required
+                autoComplete="email"
                 placeholder="you@yournonprofit.org"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
@@ -61,6 +62,7 @@ export default function LoginPage({ searchParams }: Props) {
               <PasswordInput
                 name="password"
                 required
+                autoComplete="current-password"
                 placeholder="••••••••"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               />
@@ -80,10 +82,17 @@ export default function LoginPage({ searchParams }: Props) {
             </button>
           </form>
 
-          {errorType === 'unconfirmed' && (
+          {/* Both of these end in the same place — the user needs a fresh
+              confirmation link — so both get the resend form rather than an
+              unexplained empty login form. /auth/callback redirects here with
+              ?error=auth_callback_failed when the code exchange fails, which
+              in practice means the link was expired or already used. */}
+          {(errorType === 'unconfirmed' || errorType === 'auth_callback_failed') && (
             <div className="mt-5 space-y-3">
               <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
-                Your email hasn&apos;t been confirmed yet. Check your inbox for the confirmation link, or resend it below.
+                {errorType === 'auth_callback_failed'
+                  ? 'That confirmation link has expired or has already been used. Enter your email below and we’ll send you a new one.'
+                  : 'Your email hasn’t been confirmed yet. Check your inbox for the confirmation link, or resend it below.'}
               </div>
               <ResendConfirmationForm />
             </div>

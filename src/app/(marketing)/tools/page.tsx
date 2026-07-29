@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import ToolLogo from '@/components/tools/ToolLogo'
 import { ELIGIBILITY_COLUMNS } from '@/lib/eligibility'
+import { buildSearchOrFilter } from '@/lib/search-filter'
 
 export const metadata: Metadata = {
   title: 'Browse Free Nonprofit Tools | Free For NonProfits',
@@ -85,7 +86,11 @@ export default async function ToolsPage({
   }
 
   if (q) {
-    query = query.or(`name.ilike.%${q}%,description.ilike.%${q}%,nonprofit_deal.ilike.%${q}%`)
+    // Never interpolate `q` straight into the or() string — commas and
+    // parentheses are filter *grammar*, not text, and a raw value silently
+    // breaks the whole query. See src/lib/search-filter.ts.
+    const orFilter = buildSearchOrFilter(q, ['name', 'description', 'nonprofit_deal'])
+    if (orFilter) query = query.or(orFilter)
   }
 
   const { data: tools } = await query

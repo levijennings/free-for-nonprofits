@@ -5,6 +5,13 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/nav/Header'
 import ToolLogo from '@/components/tools/ToolLogo'
+import { StatusPill } from '@/components/ui/StatusPill'
+import {
+  CLAIM_STATUS_COPY,
+  toPillStatus,
+  waitingLabel,
+  type ClaimStatusValue,
+} from '@/lib/claims'
 
 const pricingLabels: Record<string, string> = {
   free: 'Free',
@@ -67,6 +74,7 @@ export default async function DashboardPage() {
     { data: userSubmissions },
     { data: resourceOfWeek },
     { data: newTools },
+    { data: openClaims },
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
 
@@ -116,6 +124,15 @@ export default async function DashboardPage() {
       .gte('created_at', new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString())
       .order('created_at', { ascending: false })
       .limit(5),
+
+    // Applications the user has started but not finished. This is the one
+    // thing on the dashboard they cannot reconstruct from the public site.
+    supabase
+      .from('tool_claims')
+      .select('tool_id, status, note, applied_at, updated_at, tool:tools(id, name, slug, logo_url, website_url)')
+      .eq('user_id', user.id)
+      .in('status', ['gathering_docs', 'applied'])
+      .order('updated_at', { ascending: false }),
   ])
 
   // Fetch profiles for recent reviewers (separate query because reviews.user_id → auth.users, not profiles)
@@ -243,6 +260,86 @@ export default async function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left column: saved tools + activity feed */}
             <div className="lg:col-span-2 space-y-8">
+
+              {/* Applications in progress — the reason this account exists */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">Applications in progress</h2>
+                  {openClaims && openClaims.length > 0 && (
+                    <span className="text-xs text-fg-subtle tabular-nums">
+                      {openClaims.length} open
+                    </span>
+                  )}
+                </div>
+
+                {!openClaims || openClaims.length === 0 ? (
+                  <div className="bg-surface rounded-2xl border border-line p-6">
+                    <h3 className="font-semibold text-fg">Nothing in flight</h3>
+                    <p className="text-sm text-fg-muted mt-1 max-w-prose">
+                      Programmes like TechSoup validation or Google Ad Grants are reviewed
+                      by a person and can take weeks. Mark one as started on its page and
+                      it will sit here with the date you applied, so you know when it is
+                      worth chasing.
+                    </p>
+                    <Link
+                      href="/tools"
+                      className="inline-flex mt-4 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-fg transition-colors hover:bg-accent-hover"
+                    >
+                      Find a programme to apply for
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {openClaims.map((claim) => {
+                      const tool = claim.tool as unknown as {
+                        id: string; name: string; slug: string;
+                        logo_url: string | null; website_url: string;
+                      } | null
+                      if (!tool) return null
+                      const status = claim.status as ClaimStatusValue
+                      const waiting = waitingLabel({ status, applied_at: claim.applied_at })
+                      return (
+                        <div
+                          key={claim.tool_id}
+                          className="bg-surface rounded-2xl border border-line p-4 flex items-start gap-4"
+                        >
+                          <ToolLogo
+                            src={tool.logo_url || ''}
+                            websiteUrl={tool.website_url}
+                            alt={tool.name}
+                            className="w-11 h-11 rounded-xl object-contain border border-line p-1 shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Link
+                                href={`/tools/${tool.slug}`}
+                                className="font-semibold text-fg hover:text-accent transition-colors"
+                              >
+                                {tool.name}
+                              </Link>
+                              <StatusPill status={toPillStatus(status)} />
+                            </div>
+                            <p className="text-sm text-fg-muted mt-0.5">
+                              {waiting ?? CLAIM_STATUS_COPY[status].meaning}
+                            </p>
+                            {claim.note && (
+                              <p className="text-xs text-fg-subtle mt-1 line-clamp-2">
+                                {claim.note}
+                              </p>
+                            )}
+                          </div>
+                          <Link
+                            href={`/tools/${tool.slug}`}
+                            className="shrink-0 px-3 py-1.5 text-xs font-medium text-fg-muted border border-line rounded-lg hover:border-line-strong hover:text-fg transition-colors"
+                          >
+                            Update →
+                          </Link>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
 
               {/* Saved tools */}
               <div>

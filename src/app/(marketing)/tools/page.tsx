@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import ToolLogo from '@/components/tools/ToolLogo'
+import { ELIGIBILITY_COLUMNS } from '@/lib/eligibility'
 
 export const metadata: Metadata = {
   title: 'Browse Free Nonprofit Tools | Free For NonProfits',
@@ -12,6 +13,8 @@ interface SearchParams {
   q?: string
   category?: string
   pricing?: string
+  /** 'gated' = requires nonprofit status; 'open' = available to anyone. */
+  access?: string
 }
 
 const pricingLabels: Record<string, string> = {
@@ -26,13 +29,29 @@ const pricingColors: Record<string, string> = {
   nonprofit_discount: 'bg-purple-100 text-purple-800',
 }
 
+/** Preserve the other active filters when one of them changes. */
+function buildHref(params: {
+  q?: string
+  category?: string
+  pricing?: string
+  access?: string
+}): string {
+  const sp = new URLSearchParams()
+  if (params.q) sp.set('q', params.q)
+  if (params.category) sp.set('category', params.category)
+  if (params.pricing) sp.set('pricing', params.pricing)
+  if (params.access) sp.set('access', params.access)
+  const qs = sp.toString()
+  return qs ? `/tools?${qs}` : '/tools'
+}
+
 export default async function ToolsPage({
   searchParams,
 }: {
   searchParams: SearchParams
 }) {
   const supabase = await createClient()
-  const { q, category, pricing } = searchParams
+  const { q, category, pricing, access } = searchParams
 
   // Fetch categories for filter sidebar
   const { data: categories } = await supabase
@@ -43,13 +62,14 @@ export default async function ToolsPage({
   // Build tools query
   let query = supabase
     .from('tools')
-    .select(`
-      id, name, slug, description, website_url, logo_url,
-      pricing_model, nonprofit_deal, rating_avg, review_count, is_featured,
-      save_count, favorite_count, using_count,
-      category:categories(name, slug, icon)
-    `)
+    .select(ELIGIBILITY_COLUMNS)
     .eq('is_verified', true)
+
+  if (access === 'gated') {
+    query = query.eq('requires_nonprofit_status', true)
+  } else if (access === 'open') {
+    query = query.eq('requires_nonprofit_status', false)
+  }
 
   if (category) {
     const { data: cat } = await supabase
@@ -84,6 +104,44 @@ export default async function ToolsPage({
           </h1>
           <p className="mt-1 text-gray-500">
             {tools?.length ?? 0} {pricing === 'free' ? 'free' : pricing === 'nonprofit_discount' ? 'discounted' : ''} tools for nonprofits
+          </p>
+
+          {/* Access filter — the distinction that actually matters.
+              A nonprofit programme you can be refused for is a different thing
+              from a tool that is free to everyone, and the old UI showed them
+              identically. */}
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
+              Access
+            </span>
+            {[
+              { key: undefined, label: 'Everything' },
+              { key: 'gated', label: 'Nonprofit programmes' },
+              { key: 'open', label: 'Free to anyone' },
+            ].map((opt) => {
+              const href = buildHref({ q, category, pricing, access: opt.key })
+              const active = access === opt.key
+              return (
+                <Link
+                  key={opt.label}
+                  href={href}
+                  className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
+                    active
+                      ? 'border-brand-500 bg-brand-500 text-white'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-brand-300'
+                  }`}
+                >
+                  {opt.label}
+                </Link>
+              )
+            })}
+          </div>
+          <p className="mt-2 max-w-prose text-sm text-gray-500">
+            {access === 'gated'
+              ? 'Programmes gated behind verified nonprofit status. There is an application, and it can be refused.'
+              : access === 'open'
+                ? 'Free or cheap to everyone. Being a nonprofit gets you nothing extra, and there is nothing to apply for.'
+                : 'Some of these are nonprofit programmes you apply for. Others are free to anyone. Filter above to tell them apart.'}
           </p>
 
           {/* Quick pricing filters */}
@@ -195,11 +253,19 @@ export default async function ToolsPage({
 
                     <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">{tool.description}</p>
 
-                    {tool.nonprofit_deal && (
+                    {/* Gated programmes get the emphasis. Tools that are free
+                        to everyone are stated plainly instead of dressed up as
+                        a nonprofit perk. */}
+                    {tool.requires_nonprofit_status === false ? (
+                      <div className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs leading-relaxed text-gray-600">
+                        <span className="font-medium text-gray-700">Open to anyone</span>
+                        {tool.nonprofit_deal ? ` — ${tool.nonprofit_deal}` : ''}
+                      </div>
+                    ) : tool.nonprofit_deal ? (
                       <div className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-2.5 py-1.5 line-clamp-2 leading-relaxed">
                         🎁 {tool.nonprofit_deal}
                       </div>
-                    )}
+                    ) : null}
 
                     <div className="flex items-center justify-between mt-auto pt-1">
                       <div className="flex items-center gap-2 flex-wrap">

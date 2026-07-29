@@ -6,6 +6,7 @@ import type { Metadata } from 'next'
 import ToolLogo from '@/components/tools/ToolLogo'
 import AffiliateLink from '@/components/tools/AffiliateLink'
 import ToolActions from '@/components/tools/ToolActions'
+import ClaimGuide from '@/components/tools/ClaimGuide'
 import ReviewForm from '@/components/reviews/ReviewForm'
 import ReviewsList from '@/components/reviews/ReviewsList'
 
@@ -285,6 +286,9 @@ export default async function ToolDetailPage({ params }: Props) {
                   : `Nonprofits can access ${tool.name} to ${tool.description.toLowerCase().replace(/\.$/, '')}.`}
               </p>
             </div>
+
+            {/* What it takes to actually claim this */}
+            <ClaimGuide tool={tool} />
 
             {/* Features */}
             {features.length > 0 && (

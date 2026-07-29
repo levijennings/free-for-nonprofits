@@ -102,8 +102,15 @@ export default async function ToolsPage({
           <h1 className="text-3xl font-bold text-gray-900">
             {q ? `Results for "${q}"` : activeCategory ? `${activeCategory.icon} ${activeCategory.name}` : 'All Tools'}
           </h1>
+          {/* "tools for nonprofits" is wrong when the filter is showing things
+              that are explicitly not nonprofit-specific. */}
           <p className="mt-1 text-gray-500">
-            {tools?.length ?? 0} {pricing === 'free' ? 'free' : pricing === 'nonprofit_discount' ? 'discounted' : ''} tools for nonprofits
+            {tools?.length ?? 0}{' '}
+            {access === 'open'
+              ? 'tools free to anyone'
+              : access === 'gated'
+                ? 'nonprofit programmes'
+                : `${pricing === 'free' ? 'free ' : pricing === 'nonprofit_discount' ? 'discounted ' : ''}tools for nonprofits`}
           </p>
 
           {/* Access filter — the distinction that actually matters.

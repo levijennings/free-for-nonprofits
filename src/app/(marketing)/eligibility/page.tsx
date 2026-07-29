@@ -140,35 +140,48 @@ async function Results({ answers }: { answers: EligibilityAnswers }) {
         ))}
       </Section>
 
-      {/* ---------- Ineligible: the trust-builder ---------- */}
+      {/* ---------- Ineligible: the trust-builder ----------
+          Collapsed by default. It is the most credibility-building thing on
+          the page, but at 40+ rows it buries the results if left open. */}
       {snap.ineligible.length > 0 && (
-        <Section
-          title="Not open to you"
-          note="Listed with the reason, so you do not waste an afternoon finding out the hard way."
-          count={snap.ineligible.length}
-          muted
-        >
-          {snap.ineligible.map((tool) => (
-            <div
-              key={tool.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-surface px-4 py-3"
-            >
-              <div className="min-w-0">
+        <details className="group rounded-lg border border-line bg-surface">
+          <summary className="cursor-pointer list-none px-5 py-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+            <span className="flex flex-wrap items-baseline justify-between gap-2">
+              <span className="text-h3 font-semibold text-fg">
+                Not open to you{' '}
+                <span className="font-normal tabular-nums text-fg-subtle">
+                  ({snap.ineligible.length})
+                </span>
+              </span>
+              <span className="text-sm text-accent group-open:hidden">Show the reasons →</span>
+              <span className="hidden text-sm text-fg-subtle group-open:inline">Hide</span>
+            </span>
+            <span className="mt-1 block max-w-prose text-sm text-fg-muted">
+              Every one listed with the reason, so you do not waste an afternoon finding
+              out the hard way.
+            </span>
+          </summary>
+          <div className="space-y-2 border-t border-line px-5 py-4">
+            {snap.ineligible.map((tool) => (
+              <div
+                key={tool.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-surface-subtle px-4 py-3"
+              >
                 <span className="font-medium text-fg-muted">{tool.name}</span>
+                <ul className="flex flex-wrap gap-2">
+                  {tool.reasons.map((r) => (
+                    <li
+                      key={r}
+                      className="rounded-sm bg-status-warn-bg px-2 py-1 text-xs text-fg-muted"
+                    >
+                      {r}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="flex flex-wrap gap-2">
-                {tool.reasons.map((r) => (
-                  <li
-                    key={r}
-                    className="rounded-sm bg-status-warn-bg px-2 py-1 text-xs text-fg-muted"
-                  >
-                    {r}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </Section>
+            ))}
+          </div>
+        </details>
       )}
 
       {/* ---------- Open to all ---------- */}

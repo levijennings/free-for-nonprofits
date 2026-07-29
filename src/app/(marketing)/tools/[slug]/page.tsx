@@ -374,11 +374,21 @@ export default async function ToolDetailPage({ params }: Props) {
                 {pricingDescriptions[tool.pricing_model]}
               </p>
 
+              {/* Only call it a "Nonprofit Deal" when it actually is one.
+                  For tools open to everyone this block used to contradict the
+                  claim guide sitting right next to it. */}
               {tool.nonprofit_deal && (
-                <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 mb-5">
-                  <p className="text-xs font-semibold text-emerald-800 mb-1">Nonprofit Deal</p>
-                  <p className="text-sm text-emerald-700 leading-relaxed">{tool.nonprofit_deal}</p>
-                </div>
+                tool.requires_nonprofit_status === false ? (
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-5">
+                    <p className="text-xs font-semibold text-gray-700 mb-1">Open to anyone</p>
+                    <p className="text-sm text-gray-600 leading-relaxed">{tool.nonprofit_deal}</p>
+                  </div>
+                ) : (
+                  <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 mb-5">
+                    <p className="text-xs font-semibold text-emerald-800 mb-1">Nonprofit Deal</p>
+                    <p className="text-sm text-emerald-700 leading-relaxed">{tool.nonprofit_deal}</p>
+                  </div>
+                )
               )}
 
               <AffiliateLink

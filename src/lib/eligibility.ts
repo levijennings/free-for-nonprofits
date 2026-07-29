@@ -21,11 +21,37 @@
  */
 
 export const ORG_TYPES = [
-  { value: 'nonprofit_501c3', label: '501(c)(3) public charity', hint: 'The most common US nonprofit' },
-  { value: 'nonprofit_501c6', label: '501(c)(6) trade or professional association', hint: 'Chambers, leagues, boards' },
-  { value: 'religious', label: 'Church or religious organisation', hint: 'Excluded more often than you would expect' },
-  { value: 'school', label: 'School, college or university', hint: 'Many vendors route these elsewhere' },
-  { value: 'charity_non_us', label: 'Registered charity outside the US', hint: 'Equivalent status in your own country' },
+  {
+    value: 'nonprofit_501c3',
+    label: '501(c)(3) public charity',
+    hint: 'The most common US nonprofit',
+    /** Plural form, used when stating an exclusion reason. */
+    plural: '501(c)(3) charities',
+  },
+  {
+    value: 'nonprofit_501c6',
+    label: '501(c)(6) trade or professional association',
+    hint: 'Chambers, leagues, boards',
+    plural: '501(c)(6) associations',
+  },
+  {
+    value: 'religious',
+    label: 'Church or religious organisation',
+    hint: 'Excluded more often than you would expect',
+    plural: 'churches and religious organisations',
+  },
+  {
+    value: 'school',
+    label: 'School, college or university',
+    hint: 'Many vendors route these elsewhere',
+    plural: 'schools and universities',
+  },
+  {
+    value: 'charity_non_us',
+    label: 'Registered charity outside the US',
+    hint: 'Equivalent status in your own country',
+    plural: 'charities outside the US',
+  },
 ] as const
 
 export type OrgType = (typeof ORG_TYPES)[number]['value']
@@ -106,8 +132,8 @@ export function matchTool(
 
   if (answers.orgType && tool.eligible_org_types?.length) {
     if (!tool.eligible_org_types.includes(answers.orgType)) {
-      const label = ORG_TYPES.find((o) => o.value === answers.orgType)?.label ?? answers.orgType
-      reasons.push(`Not open to ${label.toLowerCase()}`)
+      const plural = ORG_TYPES.find((o) => o.value === answers.orgType)?.plural
+      reasons.push(plural ? `Excludes ${plural}` : 'Your organisation type is excluded')
     }
   }
 

@@ -24,6 +24,18 @@ const pricingLabels: Record<string, string> = {
   nonprofit_discount: 'Nonprofit Discount',
 }
 
+/**
+ * Card badges use the short form. "Nonprofit Discount" is 18 characters sitting
+ * beside a tool name in a three-column grid — it forced long names to wrap to
+ * three lines and collide with it. The full label is still used on the filter
+ * pills, where there is room and the extra word does work.
+ */
+const pricingBadgeLabels: Record<string, string> = {
+  free: 'Free',
+  freemium: 'Freemium',
+  nonprofit_discount: 'Discount',
+}
+
 const pricingColors: Record<string, string> = {
   free: 'bg-emerald-100 text-emerald-800',
   freemium: 'bg-blue-100 text-blue-800',
@@ -377,10 +389,14 @@ export default async function ToolsPage({
                             <span className="text-accent font-bold text-sm">{tool.name[0]}</span>
                           </div>
                         )}
-                        <h2 className="font-semibold text-fg group-hover:text-accent transition-colors leading-tight">{tool.name}</h2>
+                        {/* min-w-0 lets the title actually shrink inside the
+                            flex row. Without it a long name ("Salesforce
+                            Nonprofit Cloud") refuses to give ground and runs
+                            under the pricing badge. */}
+                        <h2 className="min-w-0 font-semibold text-fg group-hover:text-accent transition-colors leading-tight line-clamp-2">{tool.name}</h2>
                       </div>
                       <span className={`shrink-0 text-xs font-semibold px-2 py-1 rounded-full ${pricingColors[tool.pricing_model] ?? 'bg-surface-inset text-fg-muted'}`}>
-                        {pricingLabels[tool.pricing_model] ?? tool.pricing_model}
+                        {pricingBadgeLabels[tool.pricing_model] ?? pricingLabels[tool.pricing_model] ?? tool.pricing_model}
                       </span>
                     </div>
 

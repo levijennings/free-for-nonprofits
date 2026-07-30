@@ -9,9 +9,62 @@ import ToolActions from '@/components/tools/ToolActions'
 import ClaimGuide from '@/components/tools/ClaimGuide'
 import ReviewForm from '@/components/reviews/ReviewForm'
 import ReviewsList from '@/components/reviews/ReviewsList'
+import type { EligibilityFields } from '@/lib/eligibility'
+import { toolUrl } from '../site'
 
 // Re-render at most once per hour so new tools and edits go live quickly
 export const revalidate = 3600
+
+/**
+ * Columns the detail page and its children actually read.
+ *
+ * The previous `select('*')` pulled all 39 columns of `tools` on every render,
+ * including `long_description` twice over, the `features` JSONB, and
+ * `search_vector` — a tsvector that serialises to kilobytes of lexeme/position
+ * JSON that nothing on the page can use.
+ *
+ * `ClaimGuide` takes `EligibilityFields & { id, name, website_url }`, so every
+ * column in `ELIGIBILITY_COLUMNS`' eligibility half has to survive here.
+ */
+const TOOL_DETAIL_COLUMNS = `
+  id, name, slug, description, long_description,
+  category_id, website_url, affiliate_url, logo_url,
+  pricing_model, nonprofit_deal, features, tags, is_verified,
+  save_count, favorite_count, using_count,
+  requires_nonprofit_status, eligible_org_types, eligible_countries,
+  min_budget_usd, max_budget_usd, annual_value_usd,
+  steps_count, time_to_claim_days, difficulty, renewal,
+  nonprofit_url, last_verified_at,
+  category:categories(name, slug, icon)
+`
+
+/**
+ * The shape `TOOL_DETAIL_COLUMNS` returns. The Supabase client here is untyped,
+ * so an explicit type is what keeps the `ClaimGuide` contract
+ * (`EligibilityFields & { id, name, website_url }`) actually checked rather
+ * than silently satisfied by `any`.
+ */
+type ToolDetail = EligibilityFields & {
+  id: string
+  name: string
+  slug: string
+  description: string
+  long_description: string | null
+  category_id: string | null
+  /** NOT NULL in the schema — `AffiliateLink` relies on that. */
+  website_url: string
+  affiliate_url: string | null
+  logo_url: string | null
+  pricing_model: string
+  features: unknown
+  tags: unknown
+  is_verified: boolean | null
+  save_count: number | null
+  favorite_count: number | null
+  using_count: number | null
+  nonprofit_deal: string | null
+  category: { name: string; slug: string; icon: string } | null
+}
 
 interface Props {
   params: { slug: string }
@@ -30,21 +83,95 @@ export async function generateStaticParams() {
   return (data ?? []).map(t => ({ slug: t.slug as string }))
 }
 
-// Build an SEO-optimised meta description from real tool data
+/**
+ * Google renders roughly 160 characters of a meta description. Stopping just
+ * short of that keeps the last word intact in the SERP as well as in the tag.
+ */
+const MAX_DESCRIPTION_LENGTH = 158
+
+/** Below this there is no room to say anything, so don't start a fragment. */
+const MIN_TRUNCATED_FRAGMENT = 40
+
+const SITE_TAGLINE = 'Free and discounted software for nonprofits.'
+
+/**
+ * Normalise a fragment into exactly one sentence: collapse whitespace, strip
+ * whatever terminal punctuation the row happens to carry, then add a single
+ * full stop. 92 of 104 `nonprofit_deal` values already end in '.', which is
+ * how the old builder produced "…excluded.." on most of the directory.
+ */
+function asSentence(text: string | null | undefined): string {
+  const clean = (text ?? '').replace(/\s+/g, ' ').trim().replace(/[\s.,;:!?—–-]+$/, '')
+  return clean ? `${clean}.` : ''
+}
+
+/** Cut at the last word boundary that fits and mark the cut with an ellipsis. */
+function truncateAtWord(text: string, max: number): string {
+  if (text.length <= max) return text
+  const head = text.slice(0, max - 1) // leave room for the ellipsis
+  const lastSpace = head.lastIndexOf(' ')
+  // If the only space is very early the "word" is longer than the budget;
+  // a hard cut is then the lesser evil.
+  const cut = lastSpace > max * 0.5 ? head.slice(0, lastSpace) : head
+  return `${cut.replace(/[\s.,;:!?—–-]+$/, '')}…`
+}
+
+/**
+ * Build an SEO meta description from real tool data.
+ *
+ * The old version concatenated intro + deal + description + tagline and called
+ * `.slice(0, 160)`. The median deal is now 164 characters, so every one of the
+ * 104 rows truncated — 76 of them mid-word — and `description` and the tagline
+ * were unreachable dead code sitting past the cut.
+ *
+ * This composes in priority order instead: a short pricing intro (which also
+ * carries the "<Tool> for nonprofits" keyword), then the deal, which is the
+ * specific and genuinely useful fact. `description` and the site tagline are
+ * only appended when they fit whole — a half-sentence of boilerplate helps
+ * nobody, so only the deal is ever truncated.
+ */
 function buildDescription(tool: {
   name: string
   description: string
   pricing_model: string
   nonprofit_deal: string | null
 }): string {
-  const pricingIntro: Record<string, string> = {
-    free:               `${tool.name} is completely free for nonprofits.`,
-    freemium:           `${tool.name} offers a free plan nonprofits can use at no cost.`,
-    nonprofit_discount: `${tool.name} provides special discounted pricing for nonprofits.`,
+  // 22 of 104 names already contain "nonprofit" ("Zoom for Nonprofits"), where
+  // the old wording produced "…for Nonprofits is free for nonprofits."
+  const named = /nonprofit/i.test(tool.name)
+  const intro =
+    ({
+      free: named ? `${tool.name} is free.` : `${tool.name} is free for nonprofits.`,
+      freemium: named
+        ? `${tool.name} has a free plan.`
+        : `${tool.name} has a free plan for nonprofits.`,
+      nonprofit_discount: named
+        ? `${tool.name} is discounted.`
+        : `${tool.name} is discounted for nonprofits.`,
+    } as Record<string, string>)[tool.pricing_model] ?? `${tool.name} for nonprofits.`
+
+  const parts = [
+    asSentence(tool.nonprofit_deal),
+    asSentence(tool.description),
+    SITE_TAGLINE,
+  ].filter(Boolean)
+
+  let out = intro
+  for (let i = 0; i < parts.length; i++) {
+    const remaining = MAX_DESCRIPTION_LENGTH - out.length - 1 // -1 for the space
+    if (remaining < MIN_TRUNCATED_FRAGMENT) break
+    if (parts[i].length <= remaining) {
+      out = `${out} ${parts[i]}`
+      continue
+    }
+    // Only the deal — the highest-value part — is worth showing partially.
+    if (i === 0) {
+      out = `${out} ${truncateAtWord(parts[i], remaining)}`
+      break
+    }
+    // Anything else that does not fit is skipped; a shorter later part may.
   }
-  const intro = pricingIntro[tool.pricing_model] ?? `${tool.name} is available for nonprofits.`
-  const deal  = tool.nonprofit_deal ? ` ${tool.nonprofit_deal}.` : ''
-  return `${intro}${deal} ${tool.description} Discover free and discounted software for nonprofits at Free For NonProfits.`.slice(0, 160)
+  return out
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -59,7 +186,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const title       = `${tool.name} for Nonprofits — Free & Discounted | Free For NonProfits`
   const description = buildDescription(tool)
-  const url         = `https://free-for-nonprofits.vercel.app/tools/${tool.slug}`
+  const url         = toolUrl(tool.slug)
 
   return {
     title,
@@ -111,13 +238,14 @@ const pricingDescriptions: Record<string, string> = {
 export default async function ToolDetailPage({ params }: Props) {
   const supabase = await createClient()
 
-  const { data: tool } = await supabase
+  const { data } = await supabase
     .from('tools')
-    .select(`*, save_count, favorite_count, using_count, category:categories(name, slug, icon)`)
+    .select(TOOL_DETAIL_COLUMNS)
     .eq('slug', params.slug)
     .single()
 
-  if (!tool) notFound()
+  if (!data) notFound()
+  const tool = data as unknown as ToolDetail
 
   const features = Array.isArray(tool.features) ? tool.features : []
   const tags = Array.isArray(tool.tags) ? tool.tags : []
@@ -206,6 +334,8 @@ export default async function ToolDetailPage({ params }: Props) {
                   <ToolLogo
                     src={tool.logo_url}
                     alt={tool.name}
+                    size={64}
+                    eager
                     className="w-16 h-16 rounded-xl object-contain border border-line p-1 bg-surface-raised shrink-0"
                   />
                 )}

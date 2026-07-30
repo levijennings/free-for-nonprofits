@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Field } from '@/components/ui/Field'
 
 const ORG_SIZES = [
   { value: 'small', label: '1–10 people' },
@@ -60,30 +61,42 @@ export default function AccountForm({ initial }: Props) {
         </p>
 
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-fg-muted mb-1.5">Organization name</label>
-            <input
-              type="text"
-              value={orgName}
-              onChange={(e) => setOrgName(e.target.value)}
-              placeholder="Habitat for Humanity Chicago"
-              className="w-full px-4 py-2.5 border border-line rounded-lg text-sm bg-surface text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-            />
-          </div>
+          <Field label="Organization name">
+            {(field) => (
+              <input
+                {...field}
+                type="text"
+                autoComplete="organization"
+                value={orgName}
+                onChange={(e) => setOrgName(e.target.value)}
+                placeholder="Habitat for Humanity Chicago"
+                className="w-full px-4 py-2.5 border border-line rounded-lg text-sm bg-surface text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+              />
+            )}
+          </Field>
 
-          <div>
-            <label className="block text-sm font-medium text-fg-muted mb-1.5">Your name</label>
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Jane Doe"
-              className="w-full px-4 py-2.5 border border-line rounded-lg text-sm bg-surface text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-            />
-          </div>
+          <Field label="Your name">
+            {(field) => (
+              <input
+                {...field}
+                type="text"
+                autoComplete="name"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Jane Doe"
+                className="w-full px-4 py-2.5 border border-line rounded-lg text-sm bg-surface text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+              />
+            )}
+          </Field>
 
-          <div>
-            <label className="block text-sm font-medium text-fg-muted mb-2">Organization size</label>
+          {/*
+            A <label> can only name one form control. Wrapping a group of
+            buttons in one produced a label pointing at nothing, so the group
+            had no name and each option was announced bare. fieldset/legend is
+            the element that names a set of related controls.
+          */}
+          <fieldset>
+            <legend className="block text-sm font-medium text-fg-muted mb-2">Organization size</legend>
             <div className="grid grid-cols-3 gap-2">
               {ORG_SIZES.map((o) => {
                 const selected = orgSize === o.value
@@ -91,6 +104,7 @@ export default function AccountForm({ initial }: Props) {
                   <button
                     key={o.value}
                     type="button"
+                    aria-pressed={selected}
                     onClick={() => setOrgSize(o.value)}
                     className={`px-3 py-2.5 rounded-xl border text-xs font-medium text-center transition-all ${
                       selected
@@ -103,7 +117,7 @@ export default function AccountForm({ initial }: Props) {
                 )
               })}
             </div>
-          </div>
+          </fieldset>
         </div>
       </section>
 
@@ -116,8 +130,14 @@ export default function AccountForm({ initial }: Props) {
           {status === 'saving' ? 'Saving…' : 'Save changes'}
         </button>
 
-        {status === 'saved' && <span className="text-sm text-status-done font-medium">✓ Saved!</span>}
-        {status === 'error' && <span className="text-sm text-status-warn">{error}</span>}
+        {/* Announced, not just rendered: the result arrives asynchronously and
+            focus is still on the button that triggered it. */}
+        {status === 'saved' && (
+          <span role="status" className="text-sm text-status-done font-medium">✓ Saved!</span>
+        )}
+        {status === 'error' && (
+          <span role="alert" className="text-sm text-status-warn">{error}</span>
+        )}
       </div>
     </div>
   )

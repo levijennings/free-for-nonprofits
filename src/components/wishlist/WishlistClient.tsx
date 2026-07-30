@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { Field } from '@/components/ui/Field'
 
 const CATEGORIES = [
   { slug: 'crm-donor-management',   name: 'CRM & Donor Management' },
@@ -58,6 +59,14 @@ export default function WishlistClient({ initialRequests, userId }: Props) {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [submitError, setSubmitError] = useState('')
 
+  // Field renders the message with role="alert" and wires aria-describedby, so
+  // moving focus back to the first control both speaks the failure and lands
+  // the user where they can act on it.
+  const nameRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (submitError) nameRef.current?.focus()
+  }, [submitError])
+
   const filtered = requests.filter(r =>
     filter === 'all' ? true :
     filter === 'open' ? r.status === 'open' :
@@ -111,6 +120,7 @@ export default function WishlistClient({ initialRequests, userId }: Props) {
       status: 'open',
       vote_count: 1,
       created_at: new Date().toISOString(),
+      admin_response: null,
       voted: true,
       is_own: true,
     }
@@ -134,6 +144,8 @@ export default function WishlistClient({ initialRequests, userId }: Props) {
             {(['open', 'all', 'fulfilled'] as const).map(f => (
               <button
                 key={f}
+                type="button"
+                aria-pressed={filter === f}
                 onClick={() => setFilter(f)}
                 className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors capitalize ${
                   filter === f
@@ -149,7 +161,7 @@ export default function WishlistClient({ initialRequests, userId }: Props) {
         </div>
 
         {submitStatus === 'success' && (
-          <div className="mb-4 bg-status-done-bg border border-accent-line rounded-xl px-4 py-3 text-sm text-status-done font-medium">
+          <div role="status" className="mb-4 bg-status-done-bg border border-accent-line rounded-xl px-4 py-3 text-sm text-status-done font-medium">
             ✓ Your request was submitted. We'll get to it!
           </div>
         )}
@@ -175,8 +187,17 @@ export default function WishlistClient({ initialRequests, userId }: Props) {
                   {/* Vote button */}
                   <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
                     <button
+                      type="button"
                       onClick={() => toggleVote(req)}
                       disabled={!userId || !!votingId || req.status !== 'open'}
+                      aria-pressed={req.voted}
+                      aria-label={
+                        !userId
+                          ? `Sign in to vote for ${req.name}`
+                          : req.voted
+                            ? `Remove your vote for ${req.name}`
+                            : `Upvote ${req.name}`
+                      }
                       title={!userId ? 'Sign in to vote' : req.voted ? 'Remove vote' : 'Upvote'}
                       className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${
                         req.voted
@@ -186,7 +207,7 @@ export default function WishlistClient({ initialRequests, userId }: Props) {
                     >
                       {votingId === req.id
                         ? <span className="text-xs animate-pulse">…</span>
-                        : <svg className="w-4 h-4" fill={req.voted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        : <svg aria-hidden="true" className="w-4 h-4" fill={req.voted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
                           </svg>
                       }
@@ -267,66 +288,73 @@ export default function WishlistClient({ initialRequests, userId }: Props) {
           <div className="bg-surface rounded-2xl border border-line p-6">
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-bold text-fg">Request a tool</h3>
-              <button onClick={() => setShowForm(false)} className="text-fg-subtle hover:text-fg transition-colors duration-fast">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                aria-label="Close the tool request form"
+                className="rounded-sm text-fg-subtle hover:text-fg transition-colors duration-fast focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              >
+                <svg aria-hidden="true" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-fg-muted mb-1.5 block">
-                  Tool name <span className="text-status-warn">*</span>
-                </label>
-                <input
-                  value={form.name}
-                  onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                  placeholder="e.g. Canva, Mailchimp, Asana…"
-                  required
-                  className="w-full border border-line rounded-xl px-3 py-2.5 text-sm bg-surface text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-focus focus:border-focus"
-                />
-              </div>
+              <Field label="Tool name" required error={submitError || undefined}>
+                {(field) => (
+                  <input
+                    {...field}
+                    ref={nameRef}
+                    value={form.name}
+                    onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                    placeholder="e.g. Canva, Mailchimp, Asana…"
+                    className="w-full border border-line rounded-xl px-3 py-2.5 text-sm bg-surface text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-focus focus:border-focus"
+                  />
+                )}
+              </Field>
 
-              <div>
-                <label className="text-xs font-semibold text-fg-muted mb-1.5 block">Category</label>
-                <select
-                  value={form.category_slug}
-                  onChange={e => setForm(p => ({ ...p, category_slug: e.target.value }))}
-                  className="w-full border border-line rounded-xl px-3 py-2.5 text-sm bg-surface text-fg focus:outline-none focus:ring-2 focus:ring-focus"
-                >
-                  <option value="">Any category</option>
-                  {CATEGORIES.map(c => (
-                    <option key={c.slug} value={c.slug}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
+              <Field label="Category">
+                {(field) => (
+                  <select
+                    {...field}
+                    value={form.category_slug}
+                    onChange={e => setForm(p => ({ ...p, category_slug: e.target.value }))}
+                    className="w-full border border-line rounded-xl px-3 py-2.5 text-sm bg-surface text-fg focus:outline-none focus:ring-2 focus:ring-focus"
+                  >
+                    <option value="">Any category</option>
+                    {CATEGORIES.map(c => (
+                      <option key={c.slug} value={c.slug}>{c.name}</option>
+                    ))}
+                  </select>
+                )}
+              </Field>
 
-              <div>
-                <label className="text-xs font-semibold text-fg-muted mb-1.5 block">Website URL <span className="text-fg-subtle font-normal">(optional)</span></label>
-                <input
-                  value={form.url}
-                  onChange={e => setForm(p => ({ ...p, url: e.target.value }))}
-                  placeholder="https://…"
-                  type="url"
-                  className="w-full border border-line rounded-xl px-3 py-2.5 text-sm bg-surface text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-focus focus:border-focus"
-                />
-              </div>
+              <Field label="Website URL" hint="Optional.">
+                {(field) => (
+                  <input
+                    {...field}
+                    value={form.url}
+                    onChange={e => setForm(p => ({ ...p, url: e.target.value }))}
+                    placeholder="https://…"
+                    type="url"
+                    className="w-full border border-line rounded-xl px-3 py-2.5 text-sm bg-surface text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-focus focus:border-focus"
+                  />
+                )}
+              </Field>
 
-              <div>
-                <label className="text-xs font-semibold text-fg-muted mb-1.5 block">Why does your org need it? <span className="text-fg-subtle font-normal">(optional)</span></label>
-                <textarea
-                  value={form.description}
-                  onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                  rows={3}
-                  placeholder="What would you use it for? Any known nonprofit pricing?"
-                  className="w-full border border-line rounded-xl px-3 py-2.5 text-sm bg-surface text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-focus focus:border-focus resize-none"
-                />
-              </div>
-
-              {submitError && (
-                <p className="text-xs text-status-warn">{submitError}</p>
-              )}
+              <Field label="Why does your org need it?" hint="Optional.">
+                {(field) => (
+                  <textarea
+                    {...field}
+                    value={form.description}
+                    onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                    rows={3}
+                    placeholder="What would you use it for? Any known nonprofit pricing?"
+                    className="w-full border border-line rounded-xl px-3 py-2.5 text-sm bg-surface text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-focus focus:border-focus resize-none"
+                  />
+                )}
+              </Field>
 
               <button
                 type="submit"

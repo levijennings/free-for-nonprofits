@@ -9,6 +9,17 @@ import GoogleAnalytics from "@/components/GoogleAnalytics";
  * had been fetched and parsed — serialising CSS -> CSS -> font on the critical
  * path, with a third-party DNS lookup and TLS handshake in the middle.
  */
+/**
+ * All five weights are load-bearing — checked, not assumed:
+ *   400  body default (`font-sans` on <body>, plus 11 explicit `font-normal`)
+ *   500  136 `font-medium` call sites
+ *   600  153 `font-semibold`
+ *   700  113 `font-bold`
+ *   800   13 `font-extrabold` — the logo lockup in the header and footer of
+ *         every page, all three auth pages, the homepage CTA and the wishlist
+ *         and media-kit h1s. (The audit note that 800 is "used once" is wrong.)
+ * Nothing here is safe to drop.
+ */
 const sans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
@@ -16,11 +27,22 @@ const sans = Plus_Jakarta_Sans({
   variable: "--font-sans",
 });
 
-/** Money, counts and durations. See the .tnum utility in globals.css. */
+/**
+ * Money, counts and durations. See the .tnum utility in globals.css.
+ *
+ * Both weights are reachable: 500 from `tnum font-medium`, 600 from the ten
+ * `tnum font-bold` sites (700 has no face, so the matcher falls to 600). But
+ * every one of those is behind auth in /dashboard or /admin, and the only
+ * public use is two lines on /media-kit — so the two woff2 files have no
+ * business being <link rel=preload> on the marketing critical path. Dropping
+ * the preload keeps the font exactly where it is used and takes it off the
+ * first-load path everywhere else; `display: swap` covers the swap-in.
+ */
 const mono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["500", "600"],
   display: "swap",
+  preload: false,
   variable: "--font-mono",
 });
 

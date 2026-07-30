@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Turnstile from '@/components/Turnstile'
+import { Field } from '@/components/ui/Field'
 
 const CAPTCHA_ENABLED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
@@ -28,6 +29,13 @@ export default function SubmitToolPage() {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const [captchaToken, setCaptchaToken] = useState('')
+
+  // The failure arrives asynchronously with focus still on the submit button.
+  // Moving focus to the alert is what makes it audible.
+  const errorRef = useRef<HTMLParagraphElement>(null)
+  useEffect(() => {
+    if (status === 'error' && errorMsg) errorRef.current?.focus()
+  }, [status, errorMsg])
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(prev => ({ ...prev, [field]: e.target.value }))
@@ -96,76 +104,85 @@ export default function SubmitToolPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-surface rounded-2xl border border-line p-8 space-y-6">
-          {/* Name */}
-          <div>
-            <label className="block text-sm font-semibold text-fg mb-1.5">Tool / resource name <span className="text-red-400">*</span></label>
-            <input
-              type="text" value={form.name} onChange={set('name')} required
-              placeholder="e.g. Canva for Nonprofits"
-              className="w-full px-3.5 py-2.5 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-            />
-          </div>
+          <Field label="Tool / resource name" required>
+            {(field) => (
+              <input
+                {...field}
+                type="text" value={form.name} onChange={set('name')}
+                placeholder="e.g. Canva for Nonprofits"
+                className="w-full px-3.5 py-2.5 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+              />
+            )}
+          </Field>
 
-          {/* Website */}
-          <div>
-            <label className="block text-sm font-semibold text-fg mb-1.5">Website URL <span className="text-red-400">*</span></label>
-            <input
-              type="url" value={form.website_url} onChange={set('website_url')} required
-              placeholder="https://example.com"
-              className="w-full px-3.5 py-2.5 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-            />
-          </div>
+          <Field label="Website URL" required>
+            {(field) => (
+              <input
+                {...field}
+                type="url" value={form.website_url} onChange={set('website_url')}
+                placeholder="https://example.com"
+                className="w-full px-3.5 py-2.5 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+              />
+            )}
+          </Field>
 
-          {/* Category + Pricing side by side */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-fg mb-1.5">Category</label>
-              <select value={form.category_slug} onChange={set('category_slug')}
-                className="w-full px-3.5 py-2.5 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent bg-surface"
-              >
-                <option value="">Select a category…</option>
-                {CATEGORIES.map(c => <option key={c.slug} value={c.slug}>{c.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-fg mb-1.5">Pricing model</label>
-              <select value={form.pricing_model} onChange={set('pricing_model')}
-                className="w-full px-3.5 py-2.5 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent bg-surface"
-              >
-                <option value="">Select…</option>
-                <option value="free">Free</option>
-                <option value="freemium">Freemium</option>
-                <option value="nonprofit_discount">Nonprofit Discount</option>
-              </select>
-            </div>
+            <Field label="Category">
+              {(field) => (
+                <select {...field} value={form.category_slug} onChange={set('category_slug')}
+                  className="w-full px-3.5 py-2.5 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent bg-surface"
+                >
+                  <option value="">Select a category…</option>
+                  {CATEGORIES.map(c => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+                </select>
+              )}
+            </Field>
+            <Field label="Pricing model">
+              {(field) => (
+                <select {...field} value={form.pricing_model} onChange={set('pricing_model')}
+                  className="w-full px-3.5 py-2.5 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent bg-surface"
+                >
+                  <option value="">Select…</option>
+                  <option value="free">Free</option>
+                  <option value="freemium">Freemium</option>
+                  <option value="nonprofit_discount">Nonprofit Discount</option>
+                </select>
+              )}
+            </Field>
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-semibold text-fg mb-1.5">Description <span className="text-red-400">*</span></label>
-            <textarea
-              value={form.description} onChange={set('description')} required
-              rows={4} maxLength={500}
-              placeholder="What does this tool do and why is it useful for nonprofits?"
-              className="w-full px-3.5 py-2.5 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent resize-none"
-            />
-            <p className="text-xs text-fg-subtle mt-1">{form.description.length}/500</p>
-          </div>
+          <Field label="Description" required hint={`${form.description.length}/500 characters`}>
+            {(field) => (
+              <textarea
+                {...field}
+                value={form.description} onChange={set('description')}
+                rows={4} maxLength={500}
+                placeholder="What does this tool do and why is it useful for nonprofits?"
+                className="w-full px-3.5 py-2.5 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent resize-none"
+              />
+            )}
+          </Field>
 
-          {/* Nonprofit deal */}
-          <div>
-            <label className="block text-sm font-semibold text-fg mb-1.5">
-              Nonprofit deal <span className="font-normal text-fg-subtle">(optional)</span>
-            </label>
-            <input
-              type="text" value={form.nonprofit_deal} onChange={set('nonprofit_deal')}
-              placeholder="e.g. Free for nonprofits with 501(c)(3) status"
-              className="w-full px-3.5 py-2.5 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-            />
-          </div>
+          <Field label="Nonprofit deal" hint="Optional.">
+            {(field) => (
+              <input
+                {...field}
+                type="text" value={form.nonprofit_deal} onChange={set('nonprofit_deal')}
+                placeholder="e.g. Free for nonprofits with 501(c)(3) status"
+                className="w-full px-3.5 py-2.5 text-sm border border-line rounded-xl focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+              />
+            )}
+          </Field>
 
           {errorMsg && (
-            <p className="text-sm text-status-warn font-medium">{errorMsg}</p>
+            <p
+              ref={errorRef}
+              role="alert"
+              tabIndex={-1}
+              className="text-sm text-status-warn font-medium"
+            >
+              {errorMsg}
+            </p>
           )}
 
           <Turnstile onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} />

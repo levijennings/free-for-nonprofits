@@ -9,7 +9,11 @@ const VARIANT: Record<ButtonVariant, string> = {
   primary: "bg-accent text-accent-fg hover:bg-accent-hover border-transparent",
   secondary: "bg-surface text-fg border-line-strong hover:bg-surface-subtle",
   ghost: "bg-transparent text-fg-muted border-transparent hover:bg-surface-subtle hover:text-fg",
-  destructive: "bg-status-warn text-white border-transparent hover:brightness-90",
+  // `text-white` measured 6.7:1 in light mode but 2.42:1 in dark, because
+  // --status-warn lightens for dark surfaces and white cannot follow it.
+  // --surface inverts with the theme, so the foreground tracks the fill:
+  // white-on-red in light (6.7:1), near-black-on-salmon in dark (7.8:1).
+  destructive: "bg-status-warn text-surface border-transparent hover:brightness-90",
 };
 
 const SIZE: Record<ButtonSize, string> = {
@@ -17,6 +21,35 @@ const SIZE: Record<ButtonSize, string> = {
   md: "px-[18px] py-[11px] text-sm gap-2",
   lg: "px-6 py-3.5 text-base gap-2",
 };
+
+/**
+ * The button's visual recipe without the <button> element.
+ *
+ * Exported so a link that should *look* like a button can be a single <a>
+ * rather than a <Button> nested inside an <a> — that nesting produced two tab
+ * stops for one action, and Enter on the inner button did nothing.
+ */
+export function buttonClasses(
+  opts: {
+    variant?: ButtonVariant;
+    size?: ButtonSize;
+    fullWidth?: boolean;
+    className?: string;
+  } = {}
+) {
+  const { variant = "primary", size = "md", fullWidth, className } = opts;
+  return cn(
+    "inline-flex items-center justify-center rounded-md border font-semibold tracking-[-0.01em]",
+    "transition-colors duration-fast ease-out",
+    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
+    // Not opacity-50 — that dropped the primary to roughly 1.5:1.
+    "disabled:cursor-not-allowed disabled:bg-surface-inset disabled:text-fg-subtle disabled:border-line",
+    VARIANT[variant],
+    SIZE[size],
+    fullWidth && "w-full",
+    className
+  );
+}
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -35,17 +68,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ref={ref}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={cn(
-        "inline-flex items-center justify-center rounded-md border font-semibold tracking-[-0.01em]",
-        "transition-colors duration-fast ease-out",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus",
-        // Not opacity-50 — that dropped the primary to roughly 1.5:1.
-        "disabled:cursor-not-allowed disabled:bg-surface-inset disabled:text-fg-subtle disabled:border-line",
-        VARIANT[variant],
-        SIZE[size],
-        fullWidth && "w-full",
-        className
-      )}
+      className={buttonClasses({ variant, size, fullWidth, className })}
       {...rest}
     >
       {loading && (

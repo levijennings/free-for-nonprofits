@@ -7,7 +7,23 @@ interface Props {
   alt: string
   className?: string
   websiteUrl?: string | null // e.g. 'https://www.mailchimp.com' — used for a favicon fallback when there's no logo_url (or it fails to load)
+  /**
+   * Intrinsic pixel size written to `width`/`height`. The rendered size still
+   * comes from `className`; these exist so the browser reserves the box before
+   * the bytes arrive instead of reflowing the card. Square by design — every
+   * call site renders these in a square frame with `object-contain`.
+   */
+  size?: number
+  /**
+   * Opt out of lazy loading for logos that are above the fold. `/tools` renders
+   * ~104 of these; loading them all eagerly fires ~104 parallel cross-origin
+   * requests on first paint and starves the ones actually on screen.
+   */
+  eager?: boolean
 }
+
+/** Matches the `w-10 h-10` most call sites use. */
+const DEFAULT_SIZE = 40
 
 function getInitial(alt: string) {
   return alt.trim().charAt(0).toUpperCase()
@@ -32,7 +48,14 @@ function faviconFromUrl(websiteUrl?: string | null): string | null {
 // the same as a load error and move to the next candidate.
 const LOAD_TIMEOUT_MS = 2500
 
-export default function ToolLogo({ src, alt, className = '', websiteUrl }: Props) {
+export default function ToolLogo({
+  src,
+  alt,
+  className = '',
+  websiteUrl,
+  size = DEFAULT_SIZE,
+  eager = false,
+}: Props) {
   // Ordered list of image sources to try: the stored logo first, then a
   // favicon derived from the tool's website. Missing/empty values are
   // filtered out up front — we never render a bare `<img src="">`, which
@@ -45,6 +68,7 @@ export default function ToolLogo({ src, alt, className = '', websiteUrl }: Props
   const candidateKey = candidates.join('|')
   const [index, setIndex] = useState(0)
   const settledRef = useRef(false)
+  const imgRef = useRef<HTMLImageElement | null>(null)
 
   // Reset to the first candidate whenever the underlying tool's data changes.
   useEffect(() => {
@@ -55,16 +79,51 @@ export default function ToolLogo({ src, alt, className = '', websiteUrl }: Props
     settledRef.current = false
     if (index >= candidates.length) return
 
-    const timer = setTimeout(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const advance = () => {
       if (!settledRef.current) {
         settledRef.current = true
         setIndex(i => i + 1)
       }
-    }, LOAD_TIMEOUT_MS)
+    }
+    const startWatchdog = () => {
+      if (timer === undefined) timer = setTimeout(advance, LOAD_TIMEOUT_MS)
+    }
+    const stopWatchdog = () => {
+      if (timer !== undefined) clearTimeout(timer)
+    }
 
-    return () => clearTimeout(timer)
+    const el = imgRef.current
+
+    // The watchdog must not start before the browser has actually requested the
+    // image. With `loading="lazy"` an off-screen logo is not fetched at all, so
+    // an unconditional timer would "time out" every card below the fold and
+    // collapse it to the initial-letter fallback before it was ever visible.
+    if (eager || !el || typeof IntersectionObserver === 'undefined') {
+      startWatchdog()
+      return stopWatchdog
+    }
+
+    // Served from cache before this effect ran — nothing to watch.
+    if (el.complete && el.naturalWidth > 0) {
+      settledRef.current = true
+      return
+    }
+
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        observer.disconnect()
+        startWatchdog()
+      }
+    })
+    observer.observe(el)
+
+    return () => {
+      observer.disconnect()
+      stopWatchdog()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, candidateKey])
+  }, [index, candidateKey, eager])
 
   if (index >= candidates.length) {
     return (
@@ -77,8 +136,13 @@ export default function ToolLogo({ src, alt, className = '', websiteUrl }: Props
   return (
     <img
       key={candidates[index]}
+      ref={imgRef}
       src={candidates[index]}
       alt={alt}
+      width={size}
+      height={size}
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
       className={className}
       onLoad={() => { settledRef.current = true }}
       onError={() => {

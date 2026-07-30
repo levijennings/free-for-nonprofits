@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { nextQuery, safeNextPath } from '@/components/auth/next-param'
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null)
@@ -9,8 +10,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Email is required' }, { status: 400 })
   }
 
+  // The replacement confirmation link has to land the user where the original
+  // one would have. Validated to a same-origin path first — this value is
+  // client-supplied and ends up inside an email we send.
+  const next = safeNextPath(body?.next)
+  const { origin } = new URL(request.url)
+
   const supabase = await createClient()
-  const { error } = await supabase.auth.resend({ type: 'signup', email })
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: `${origin}/auth/callback${nextQuery(next, '?')}` },
+  })
 
   if (error) {
     // Surface rate limiting (Supabase throttles resend per address) but

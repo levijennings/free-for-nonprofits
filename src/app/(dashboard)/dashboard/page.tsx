@@ -8,10 +8,28 @@ import ToolLogo from '@/components/tools/ToolLogo'
 import { StatusPill } from '@/components/ui/StatusPill'
 import {
   CLAIM_STATUS_COPY,
+  isInProgress,
   toPillStatus,
   waitingLabel,
   type ClaimStatusValue,
 } from '@/lib/claims'
+
+interface ClaimTool {
+  id: string
+  name: string
+  slug: string
+  logo_url: string | null
+  website_url: string
+}
+
+interface ClaimRecord {
+  tool_id: string
+  status: ClaimStatusValue
+  note: string | null
+  applied_at: string | null
+  updated_at: string
+  tool: ClaimTool | null
+}
 
 const pricingLabels: Record<string, string> = {
   free: 'Free',
@@ -74,7 +92,7 @@ export default async function DashboardPage() {
     { data: userSubmissions },
     { data: resourceOfWeek },
     { data: newTools },
-    { data: openClaims },
+    { data: allClaims },
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
 
@@ -125,13 +143,14 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false })
       .limit(5),
 
-    // Applications the user has started but not finished. This is the one
-    // thing on the dashboard they cannot reconstruct from the public site.
+    // Every claim the user has tracked. This is the one thing on the dashboard
+    // they cannot reconstruct from the public site, so nothing is filtered out
+    // in the query — an approved claim used to disappear from the product
+    // entirely the moment it succeeded, which is the moment it matters most.
     supabase
       .from('tool_claims')
       .select('tool_id, status, note, applied_at, updated_at, tool:tools(id, name, slug, logo_url, website_url)')
       .eq('user_id', user.id)
-      .in('status', ['gathering_docs', 'applied'])
       .order('updated_at', { ascending: false }),
   ])
 
@@ -141,6 +160,10 @@ export default async function DashboardPage() {
     ? await supabase.from('profiles').select('id, display_name, org_name').in('id', reviewerIds)
     : { data: [] }
   const profileMap = Object.fromEntries((reviewerProfiles ?? []).map((p) => [p.id, p]))
+
+  const claims = (allClaims ?? []) as unknown as ClaimRecord[]
+  const openClaims = claims.filter((c) => isInProgress(c.status))
+  const approvedClaims = claims.filter((c) => c.status === 'approved')
 
   const displayName = profile?.display_name || user.email?.split('@')[0] || 'there'
   const orgName = profile?.org_name
@@ -272,7 +295,7 @@ export default async function DashboardPage() {
                   )}
                 </div>
 
-                {!openClaims || openClaims.length === 0 ? (
+                {openClaims.length === 0 ? (
                   <div className="bg-surface rounded-2xl border border-line p-6">
                     <h3 className="font-semibold text-fg">Nothing in flight</h3>
                     <p className="text-sm text-fg-muted mt-1 max-w-prose">
@@ -290,56 +313,73 @@ export default async function DashboardPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {openClaims.map((claim) => {
-                      const tool = claim.tool as unknown as {
-                        id: string; name: string; slug: string;
-                        logo_url: string | null; website_url: string;
-                      } | null
-                      if (!tool) return null
-                      const status = claim.status as ClaimStatusValue
-                      const waiting = waitingLabel({ status, applied_at: claim.applied_at })
-                      return (
-                        <div
-                          key={claim.tool_id}
-                          className="bg-surface rounded-2xl border border-line p-4 flex items-start gap-4"
-                        >
-                          <ToolLogo
-                            src={tool.logo_url || ''}
-                            websiteUrl={tool.website_url}
-                            alt={tool.name}
-                            className="w-11 h-11 rounded-xl object-contain border border-line p-1 shrink-0"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Link
-                                href={`/tools/${tool.slug}`}
-                                className="font-semibold text-fg hover:text-accent transition-colors"
-                              >
-                                {tool.name}
-                              </Link>
-                              <StatusPill status={toPillStatus(status)} />
-                            </div>
-                            <p className="text-sm text-fg-muted mt-0.5">
-                              {waiting ?? CLAIM_STATUS_COPY[status].meaning}
-                            </p>
-                            {claim.note && (
-                              <p className="text-xs text-fg-subtle mt-1 line-clamp-2">
-                                {claim.note}
-                              </p>
-                            )}
-                          </div>
-                          <Link
-                            href={`/tools/${tool.slug}`}
-                            className="shrink-0 px-3 py-1.5 text-xs font-medium text-fg-muted border border-line rounded-lg hover:border-line-strong hover:text-fg transition-colors"
-                          >
-                            Update →
-                          </Link>
-                        </div>
-                      )
-                    })}
+                    {openClaims.map((claim) => (
+                      <ClaimCard key={claim.tool_id} claim={claim} />
+                    ))}
                   </div>
                 )}
               </div>
+
+              {/* Approved — the outcome the whole thing was for. Previously
+                  filtered out of the dashboard, so a successful application
+                  vanished from the product at the moment it succeeded. */}
+              {approvedClaims.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold text-fg">Approved</h2>
+                    <span className="text-xs text-fg-subtle tabular-nums">
+                      {approvedClaims.length} approved
+                    </span>
+                  </div>
+                  <div className="space-y-3">
+                    {approvedClaims.map((claim) => (
+                      <ClaimCard key={claim.tool_id} claim={claim} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Everything, including the ones marked not started, so no claim
+                  the user has touched is unreachable from here. */}
+              {claims.length > 0 && (
+                <details className="bg-surface rounded-2xl border border-line">
+                  <summary className="cursor-pointer list-none px-5 py-4 flex items-center justify-between gap-3 text-sm font-medium text-fg">
+                    <span>
+                      All claims you have tracked{' '}
+                      <span className="text-fg-subtle tabular-nums font-normal">
+                        ({claims.length})
+                      </span>
+                    </span>
+                    <span className="text-xs text-accent">Show →</span>
+                  </summary>
+                  <ul className="border-t border-line divide-y divide-line">
+                    {claims.map((claim) => (
+                      <li
+                        key={claim.tool_id}
+                        className="px-5 py-3 flex items-center justify-between gap-3 flex-wrap"
+                      >
+                        {claim.tool ? (
+                          <Link
+                            href={`/tools/${claim.tool.slug}`}
+                            className="text-sm font-medium text-fg hover:text-accent transition-colors"
+                          >
+                            {claim.tool.name}
+                          </Link>
+                        ) : (
+                          <span className="text-sm text-fg-subtle">
+                            A tool that is no longer listed
+                          </span>
+                        )}
+                        <StatusPill status={toPillStatus(claim.status)} />
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="border-t border-line px-5 py-3 text-xs text-fg-subtle">
+                    Open a tool to change its status, or to remove a claim you started
+                    by mistake.
+                  </p>
+                </details>
+              )}
 
               {/* Saved tools */}
               <div>
@@ -588,6 +628,45 @@ export default async function DashboardPage() {
         </div>
       </main>
     </>
+  )
+}
+
+function ClaimCard({ claim }: { claim: ClaimRecord }) {
+  const tool = claim.tool
+  if (!tool) return null
+  const waiting = waitingLabel({ status: claim.status, applied_at: claim.applied_at })
+  return (
+    <div className="bg-surface rounded-2xl border border-line p-4 flex items-start gap-4">
+      <ToolLogo
+        src={tool.logo_url || ''}
+        websiteUrl={tool.website_url}
+        alt={tool.name}
+        className="w-11 h-11 rounded-xl object-contain border border-line p-1 shrink-0"
+      />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link
+            href={`/tools/${tool.slug}`}
+            className="font-semibold text-fg hover:text-accent transition-colors"
+          >
+            {tool.name}
+          </Link>
+          <StatusPill status={toPillStatus(claim.status)} />
+        </div>
+        <p className="text-sm text-fg-muted mt-0.5">
+          {waiting ?? CLAIM_STATUS_COPY[claim.status].meaning}
+        </p>
+        {claim.note && (
+          <p className="text-xs text-fg-subtle mt-1 line-clamp-2">{claim.note}</p>
+        )}
+      </div>
+      <Link
+        href={`/tools/${tool.slug}`}
+        className="shrink-0 px-3 py-1.5 text-xs font-medium text-fg-muted border border-line rounded-lg hover:border-line-strong hover:text-fg transition-colors"
+      >
+        Update →
+      </Link>
+    </div>
   )
 }
 

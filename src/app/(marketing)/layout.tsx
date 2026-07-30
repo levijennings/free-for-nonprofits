@@ -1,8 +1,9 @@
 import Header from '@/components/nav/Header'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
 
 const LogoIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
     <path
       fillRule="evenodd"
       clipRule="evenodd"
@@ -12,11 +13,34 @@ const LogoIcon = () => (
   </svg>
 )
 
-export default function MarketingLayout({ children }: { children: React.ReactNode }) {
+export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
+  // Resolved here, once, and passed down. The header used to do this in the
+  // browser, which is what dragged the whole Supabase client into the shared
+  // chunk of every public page.
+  const supabase = await createClient()
+  const { data } = await supabase.auth.getUser()
+  const signedIn = data.user !== null
+
   return (
     <>
-      <Header />
-      {children}
+      {/* WCAG 2.4.1. The header puts ten links and a search field ahead of the
+          content on every marketing route; this is the way past them. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:border focus:border-line focus:bg-surface focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-fg focus:shadow-2 focus:outline-2 focus:outline-offset-2 focus:outline-focus"
+      >
+        Skip to main content
+      </a>
+
+      <Header signedIn={signedIn} />
+
+      {/* Each page owns its own <main>; this is the addressable wrapper the
+          skip link moves focus to. tabIndex={-1} so the move actually sticks
+          in Safari and Chrome. */}
+      <div id="main-content" tabIndex={-1} className="focus:outline-none">
+        {children}
+      </div>
+
       <footer className="border-t border-line bg-surface-subtle mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex flex-col md:flex-row justify-between items-start gap-10">
@@ -44,10 +68,12 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               <div>
                 <p className="font-semibold text-fg mb-3">Product</p>
                 <ul className="space-y-2.5 text-fg-muted">
+                  <li><Link href="/eligibility" className="hover:text-accent transition-colors">See what you qualify for</Link></li>
                   <li><Link href="/tools" className="hover:text-accent transition-colors">Browse Tools</Link></li>
                   <li><Link href="/tools?pricing=free" className="hover:text-accent transition-colors">Free Tools</Link></li>
                   <li><Link href="/tools?pricing=nonprofit_discount" className="hover:text-accent transition-colors">Nonprofit Discounts</Link></li>
                   <li><Link href="/submit" className="hover:text-accent transition-colors">Submit a Tool</Link></li>
+                  <li><Link href="/wishlist" className="hover:text-accent transition-colors">Wishlist</Link></li>
                 </ul>
               </div>
               <div>

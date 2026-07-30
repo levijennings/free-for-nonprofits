@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { toolUrl } from '@/app/(marketing)/tools/site'
 
 interface Props {
   toolId: string
@@ -70,7 +71,7 @@ export default function ToolActions({
     setBusy(null)
   }
 
-  const pageUrl = `https://free-for-nonprofits.vercel.app/tools/${toolSlug}`
+  const pageUrl = toolUrl(toolSlug)
   const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`
 
   return (

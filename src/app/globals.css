@@ -40,7 +40,10 @@
 
     /* status */
     --status-none:        220 9% 46%;
-    --status-progress:    32 81% 37%;
+    /* 37% gave 4.37:1 against --status-progress-bg — a marginal AA fail on the
+       Badge `discount` variant and the preferences switch. 32% clears at
+       5.51:1 while keeping the same hue. Dark mode is unaffected. */
+    --status-progress:    32 81% 32%;
     --status-done:        162 94% 24%;
     --status-warn:        4 74% 40%;
     --status-progress-bg: 40 90% 96%;

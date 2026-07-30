@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { SITE_HOST, SITE_ORIGIN } from '../tools/site'
 
 const LogoIcon = ({ className = '' }: { className?: string }) => (
   <svg className={className} viewBox="0 0 20 20" fill="none">
@@ -217,7 +218,7 @@ export default function MediaKitPage() {
                   <li>Use the color logo on white or light gray backgrounds</li>
                   <li>Use the white logo on dark or brand-colored backgrounds</li>
                   <li>Maintain clear space equal to the icon height on all sides</li>
-                  <li>Link the logo to free-for-nonprofits.vercel.app</li>
+                  <li>Link the logo to {SITE_HOST}</li>
                 </ul>
               </div>
               <div className="bg-red-50 border border-red-100 rounded-2xl p-5">
@@ -282,7 +283,7 @@ export default function MediaKitPage() {
             <p className="text-fg-muted text-sm mb-6">Use these when referencing Free For NonProfits in articles, blog posts, or partner pages.</p>
             <div className="grid sm:grid-cols-2 gap-4">
               {[
-                { label: 'Website', value: 'https://free-for-nonprofits.vercel.app' },
+                { label: 'Website', value: SITE_ORIGIN },
                 { label: 'Preferred name (full)', value: 'Free For NonProfits' },
                 { label: 'Preferred name (short)', value: 'FreeForNonprofits' },
                 { label: 'Partnership / press contact', value: 'levi@dvlmnt.com' },

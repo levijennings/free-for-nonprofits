@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 interface Review {
@@ -41,6 +41,15 @@ export default function ReviewForm({ toolId, toolName, onReviewSubmitted }: Prop
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+
+  // Validation and server failures both land here, asynchronously, while focus
+  // is still on the submit button. Moving focus to the message is what makes
+  // it audible; role="alert" alone leaves the user staring at a form that
+  // looks like it hung.
+  const errorRef = useRef<HTMLParagraphElement>(null)
+  useEffect(() => {
+    if (error) errorRef.current?.focus()
+  }, [error])
 
   const supabase = createClient()
 
@@ -155,8 +164,11 @@ export default function ReviewForm({ toolId, toolName, onReviewSubmitted }: Prop
 
       {/* Star rating */}
       <div>
-        <p className="text-sm font-medium text-fg-muted mb-2">Rating</p>
-        <div className="flex gap-1">
+        <p className="text-sm font-medium text-fg-muted mb-2" id="review-rating-label">Rating</p>
+        {/* The stars carried `focus:outline-none` with no replacement, and
+            because Tailwind's utilities layer outranks the base :focus-visible
+            rule in globals.css, keyboard focus rendered nothing at all. */}
+        <div className="flex gap-1" role="group" aria-labelledby="review-rating-label">
           {[1,2,3,4,5].map(star => (
             <button
               key={star}
@@ -164,7 +176,8 @@ export default function ReviewForm({ toolId, toolName, onReviewSubmitted }: Prop
               onMouseEnter={() => setHoverRating(star)}
               onMouseLeave={() => setHoverRating(0)}
               onClick={() => setRating(star)}
-              className="hover:scale-110 transition-transform focus:outline-none"
+              className="rounded-md hover:scale-110 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              aria-pressed={star === rating}
               aria-label={`Rate ${star} star${star !== 1 ? 's' : ''}`}
             >
               <StarIcon filled={star <= (hoverRating || rating)} />
@@ -186,6 +199,7 @@ export default function ReviewForm({ toolId, toolName, onReviewSubmitted }: Prop
         <textarea
           id="review-comment"
           value={comment}
+          aria-describedby={error ? 'review-error' : undefined}
           onChange={e => setComment(e.target.value)}
           placeholder={`How has ${toolName} helped your nonprofit?`}
           rows={3}
@@ -194,10 +208,21 @@ export default function ReviewForm({ toolId, toolName, onReviewSubmitted }: Prop
         />
       </div>
 
-      {error && <p className="text-xs text-status-warn font-medium">{error}</p>}
+      {error && (
+        <p
+          ref={errorRef}
+          id="review-error"
+          role="alert"
+          tabIndex={-1}
+          className="text-xs text-status-warn font-medium"
+        >
+          {error}
+        </p>
+      )}
 
       <button
         type="submit"
+        aria-describedby={error ? 'review-error' : undefined}
         disabled={submitting || rating === 0}
         className="w-full py-2.5 bg-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed text-accent-fg text-sm font-semibold rounded-lg transition-colors duration-fast"
       >

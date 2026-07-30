@@ -4,14 +4,24 @@ import { createAdminClient, ADMIN_EMAILS } from '@/lib/supabase/admin'
 import { verifyTurnstile, getClientIp } from '@/lib/captcha'
 import { signupSchema } from '@/lib/validations'
 import { sendNewSignupAdminEmail } from '@/lib/email'
+import { nextQuery, safeNextPath } from '@/components/auth/next-param'
 
 // How many signups a single IP may attempt before being throttled.
 const MAX_ATTEMPTS_PER_HOUR = 5
 const MAX_ATTEMPTS_PER_DAY = 15
 
-// Real visitors take at least this long to load the page, read it, and click
-// submit. Bots that fill and submit the form immediately land under this.
-const MIN_FILL_TIME_MS = 1200
+// Floor for "a human was involved at all". This used to be 1200ms, which a
+// password manager clears routinely: 1Password/Chrome autofill the whole form
+// on page load and a returning user can hit submit inside a second. Those
+// people were handed a 403 telling them to email support — a dead end, on the
+// signup form, for the users most likely to have strong passwords.
+//
+// 350ms is below any plausible human round trip but still catches the case
+// this check exists for: a script that POSTs the instant the page parses.
+// The honeypot and the captcha are the load-bearing bot defences; this is a
+// cheap extra signal, and it is tuned to prefer a false negative over a false
+// positive.
+const MIN_FILL_TIME_MS = 350
 
 /**
  * Reject a submission the bot heuristics flagged.
@@ -26,6 +36,12 @@ const MIN_FILL_TIME_MS = 1200
  *
  * The `code` lets the client show a real error with a route to support, and
  * the log line is the only telemetry we have for tuning these thresholds.
+ *
+ * The two reasons get different copy because they have different remedies.
+ * A too-fast submission is genuinely retryable — the client timestamps the
+ * form at mount, so simply pressing the button again succeeds — so the message
+ * says so instead of sending the user to their email client. Only the honeypot
+ * case, which a human cannot clear by retrying, offers support as the exit.
  */
 function denyAsBot(reason: 'honeypot_filled' | 'fill_time_too_fast', ip: string, email: unknown) {
   console.error('[signup] bot check rejected submission', {
@@ -35,10 +51,21 @@ function denyAsBot(reason: 'honeypot_filled' | 'fill_time_too_fast', ip: string,
     at: new Date().toISOString(),
   })
 
+  if (reason === 'fill_time_too_fast') {
+    return NextResponse.json(
+      {
+        error:
+          "That submission came through faster than we could verify. Please press “Create free account” once more — it will go through this time.",
+        code: 'bot_check_retryable',
+      },
+      { status: 403 }
+    )
+  }
+
   return NextResponse.json(
     {
       error:
-        "We couldn't process this signup — our automated checks flagged it. If you're a real person, please email levi@dvlmnt.com and we'll set your account up manually.",
+        "We couldn't process this signup — our automated checks flagged it. Please try again, and if it still won't go through, email levi@dvlmnt.com and we'll set your account up manually.",
       code: 'bot_check_failed',
       supportEmail: 'levi@dvlmnt.com',
     },
@@ -52,6 +79,11 @@ export async function POST(request: NextRequest) {
 
   const { email, password, orgName, honeypot, formRenderedAt, captchaToken } = body
   const ip = getClientIp(request) ?? 'unknown'
+  // Where the user was before signup interrupted them (e.g. the tool page they
+  // wanted to claim). Validated to a same-origin path because it is embedded
+  // in the confirmation email we send and redirected to on the way back.
+  const next = safeNextPath(body?.next)
+  const { origin } = new URL(request.url)
   const admin = createAdminClient()
 
   // ---- Rate limiting (persisted in Postgres so it survives across serverless
@@ -109,6 +141,9 @@ export async function POST(request: NextRequest) {
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
+      // Without this, Supabase falls back to the project's Site URL and the
+      // confirmation link drops the user on a bare dashboard.
+      emailRedirectTo: `${origin}/auth/callback${nextQuery(next, '?')}`,
       data: {
         display_name: parsed.data.orgName || parsed.data.email.split('@')[0],
         org_name: parsed.data.orgName || '',

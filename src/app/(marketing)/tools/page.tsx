@@ -30,6 +30,113 @@ const pricingColors: Record<string, string> = {
   nonprofit_discount: 'bg-purple-100 text-purple-800',
 }
 
+/**
+ * The pricing pills.
+ *
+ * The active fills were `green-500` / `blue-500` / `purple-500` with white
+ * text: 2.28:1, 3.68:1 and 3.96:1 — all under AA's 4.5:1, and the selected
+ * pill is the one label on the page a user has to be able to read. The 700
+ * shades keep the same three hues (5.02:1, 6.70:1, 6.98:1 on white) so the
+ * categorical coding survives, and the inactive state is untouched: the hue
+ * still lives in the emoji and the hover border.
+ */
+const pricingPills = [
+  { key: undefined, label: 'All',                active: 'bg-accent text-accent-fg border-accent',       idle: 'bg-surface text-fg-muted border-line hover:border-accent-line' },
+  { key: 'free',               label: '🎁 Free',               active: 'bg-green-700 text-white border-green-700',   idle: 'bg-surface text-fg-muted border-line hover:border-green-300' },
+  { key: 'freemium',           label: '⚡ Freemium',           active: 'bg-blue-700 text-white border-blue-700',     idle: 'bg-surface text-fg-muted border-line hover:border-blue-300' },
+  { key: 'nonprofit_discount', label: '💜 Nonprofit Discount', active: 'bg-purple-700 text-white border-purple-700', idle: 'bg-surface text-fg-muted border-line hover:border-purple-300' },
+] as const
+
+/**
+ * Sentences that state a limit, an exclusion or an expiry rather than a
+ * benefit. Deliberately broad: a false positive only changes which half of the
+ * card a sentence lands in, while a false negative can bury the one clause
+ * that makes a "deal" not apply to the reader.
+ */
+const CAVEAT_PATTERN =
+  /\b(exclud\w*|ineligible|only|not free|no longer|ended|ends|expires?|expired|capped|cap|ceiling|limited|limits|restrict\w*|must|requires?|required|unconfirmed|unverified|revoked|not included|one-time|still apply|not zero-cost|minimum|mandatory|reapply|reconfirmed|wrong|stale|out of date|discontinued)\b/i
+
+/** Split on sentence ends, but not on "U.S. government" or "$1,199-$1,699/yr." */
+function splitSentences(text: string): string[] {
+  return text
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(/(?<=[.!?])\s+(?=[A-Z0-9$"“(])/)
+    .filter(Boolean)
+}
+
+/**
+ * Separate a deal into what you get and what stops you getting it.
+ *
+ * 91 of 104 deals overflow two lines, and on ~20 of them the material
+ * exclusion sits entirely past the cut — microsoft-365 hid "grants ENDED
+ * 1 July 2025", zoom hid the $10M budget ceiling, trello hid "only discounted,
+ * not free". Clamping alone cannot fix that: the caveat has to be pulled out
+ * of the clamped region, not just given more room.
+ *
+ * Only a *trailing run* of caveat sentences is split off, which is where
+ * vendors put exclusions and which keeps the deal in its written order. When
+ * the caveat is not at the end (or is the whole deal) nothing is reordered and
+ * the caller falls back to a plain three-line clamp — in those rows the caveat
+ * already leads, so it is visible anyway.
+ */
+function splitDeal(deal: string): { body: string; caveat: string | null } {
+  const sentences = splitSentences(deal)
+  if (sentences.length < 2) return { body: deal.trim(), caveat: null }
+
+  let firstCaveat = sentences.length
+  while (firstCaveat > 0 && CAVEAT_PATTERN.test(sentences[firstCaveat - 1])) firstCaveat--
+
+  // No trailing caveats, or the whole deal is caveat — don't split.
+  if (firstCaveat === 0 || firstCaveat === sentences.length) {
+    return { body: deal.trim(), caveat: null }
+  }
+  return {
+    body: sentences.slice(0, firstCaveat).join(' '),
+    caveat: sentences.slice(firstCaveat).join(' '),
+  }
+}
+
+/**
+ * The deal line on a card.
+ *
+ * Previously the gated branch clamped at two lines and the open-to-anyone
+ * branch had no clamp at all, so 30 cards rendered up to 277 characters and
+ * blew out the grid while the other 74 hid their conditions. Both now clamp on
+ * the same budget, and a trailing caveat is promoted out of the clamped block
+ * so a reader scanning the grid can never be left with the good half of a
+ * sentence and none of the bad half.
+ */
+function DealSummary({ deal, open }: { deal: string | null; open: boolean }) {
+  if (!deal && !open) return null
+
+  const { body, caveat } = deal ? splitDeal(deal) : { body: '', caveat: null }
+  // No separate caveat → the deal gets the full three lines. With one → two
+  // lines of offer plus the conditions underneath. Either way it is bounded.
+  const bodyClamp = caveat ? 'line-clamp-2' : 'line-clamp-3'
+
+  return (
+    <div className="space-y-1.5">
+      {open ? (
+        <div className={`rounded-lg border border-line bg-surface-raised px-2.5 py-1.5 text-xs leading-relaxed text-fg-muted ${bodyClamp}`}>
+          <span className="font-medium text-fg">Open to anyone</span>
+          {body ? ` — ${body}` : ''}
+        </div>
+      ) : (
+        <div className={`text-xs text-accent bg-accent-subtle border border-accent-line rounded-lg px-2.5 py-1.5 leading-relaxed ${bodyClamp}`}>
+          🎁 {body}
+        </div>
+      )}
+      {caveat && (
+        <p className="flex gap-1.5 rounded-lg border border-status-warn/30 bg-status-warn-bg px-2.5 py-1.5 text-xs leading-relaxed text-status-warn">
+          <span aria-hidden="true">⚠</span>
+          <span className="line-clamp-3">{caveat}</span>
+        </p>
+      )}
+    </div>
+  )
+}
+
 /** Preserve the other active filters when one of them changes. */
 function buildHref(params: {
   q?: string
@@ -54,11 +161,18 @@ export default async function ToolsPage({
   const supabase = await createClient()
   const { q, category, pricing, access } = searchParams
 
-  // Fetch categories for filter sidebar
-  const { data: categories } = await supabase
+  // Categories for the sidebar.
+  //
+  // `?category=` used to cost a third round trip: fetch categories, then fetch
+  // that same category *again* purely to turn its slug into an id, then fetch
+  // tools. The sidebar list is already in memory and already contains the id,
+  // so the lookup is resolved here and the page is down to two queries.
+  const { data: categories, error: categoriesError } = await supabase
     .from('categories')
     .select('id, name, slug, icon')
     .order('display_order')
+
+  const activeCategory = categories?.find((c) => c.slug === category)
 
   // Build tools query
   let query = supabase
@@ -72,13 +186,8 @@ export default async function ToolsPage({
     query = query.eq('requires_nonprofit_status', false)
   }
 
-  if (category) {
-    const { data: cat } = await supabase
-      .from('categories')
-      .select('id')
-      .eq('slug', category)
-      .single()
-    if (cat) query = query.eq('category_id', cat.id)
+  if (activeCategory) {
+    query = query.eq('category_id', activeCategory.id)
   }
 
   if (pricing) {
@@ -93,11 +202,14 @@ export default async function ToolsPage({
     if (orFilter) query = query.or(orFilter)
   }
 
-  const { data: tools } = await query
+  const { data: tools, error: toolsError } = await query
     .order('is_featured', { ascending: false })
     .order('rating_avg', { ascending: false })
 
-  const activeCategory = categories?.find((c) => c.slug === category)
+  // An error is not an empty result. The old code destructured only `data`, so
+  // a failed query — a malformed search term, a dropped connection, an RLS
+  // change — rendered as a confident "No tools found. Try a different search."
+  const loadError = toolsError ?? categoriesError
 
   return (
     <main className="min-h-screen bg-surface-subtle">
@@ -158,30 +270,21 @@ export default async function ToolsPage({
 
           {/* Quick pricing filters */}
           <div className="mt-4 flex flex-wrap gap-2">
-            <Link
-              href="/tools"
-              className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${!pricing && !category ? 'bg-accent text-accent-fg border-accent' : 'bg-surface text-fg-muted border-line hover:border-accent-line'}`}
-            >
-              All
-            </Link>
-            <Link
-              href="/tools?pricing=free"
-              className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${pricing === 'free' ? 'bg-green-500 text-white border-green-500' : 'bg-surface text-fg-muted border-line hover:border-green-300'}`}
-            >
-              🎁 Free
-            </Link>
-            <Link
-              href="/tools?pricing=freemium"
-              className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${pricing === 'freemium' ? 'bg-blue-500 text-white border-blue-500' : 'bg-surface text-fg-muted border-line hover:border-blue-300'}`}
-            >
-              ⚡ Freemium
-            </Link>
-            <Link
-              href="/tools?pricing=nonprofit_discount"
-              className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${pricing === 'nonprofit_discount' ? 'bg-purple-500 text-white border-purple-500' : 'bg-surface text-fg-muted border-line hover:border-purple-300'}`}
-            >
-              💜 Nonprofit Discount
-            </Link>
+            {pricingPills.map((pill) => {
+              // "All" also clears an active category, which is why it links to
+              // the bare /tools rather than through buildHref.
+              const active = pill.key ? pricing === pill.key : !pricing && !category
+              return (
+                <Link
+                  key={pill.label}
+                  href={pill.key ? `/tools?pricing=${pill.key}` : '/tools'}
+                  aria-current={active ? 'page' : undefined}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${active ? pill.active : pill.idle}`}
+                >
+                  {pill.label}
+                </Link>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -226,7 +329,20 @@ export default async function ToolsPage({
               ))}
             </div>
 
-            {!tools || tools.length === 0 ? (
+            {loadError ? (
+              <div className="bg-surface rounded-2xl border border-status-warn/30 p-16 text-center">
+                <div className="text-4xl mb-3">⚠️</div>
+                <h3 className="text-lg font-semibold text-fg mb-1">We couldn&apos;t load the directory</h3>
+                <p className="text-fg-muted text-sm mb-1">
+                  Something went wrong on our side — this is not an empty result, and your
+                  search may well have matches.
+                </p>
+                <p className="text-status-warn text-xs mb-4 font-mono">{loadError.message}</p>
+                <Link href="/tools" className="text-accent font-medium hover:text-accent-hover transition-colors text-sm">
+                  Try again →
+                </Link>
+              </div>
+            ) : !tools || tools.length === 0 ? (
               <div className="bg-surface rounded-2xl border border-line p-16 text-center">
                 <div className="text-4xl mb-3">🔍</div>
                 <h3 className="text-lg font-semibold text-fg mb-1">No tools found</h3>
@@ -237,7 +353,7 @@ export default async function ToolsPage({
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {tools.map((tool) => (
+                {tools.map((tool, i) => (
                   <Link
                     key={tool.id}
                     href={`/tools/${tool.slug}`}
@@ -249,6 +365,11 @@ export default async function ToolsPage({
                           <ToolLogo
                             src={tool.logo_url}
                             alt={tool.name}
+                            size={40}
+                            /* The first row or two are above the fold on every
+                               viewport; the remaining ~98 lazy-load instead of
+                               opening ~104 cross-origin connections at once. */
+                            eager={i < 6}
                             className="w-10 h-10 rounded-xl object-contain border border-line p-1 bg-surface-raised shrink-0"
                           />
                         ) : (
@@ -267,17 +388,15 @@ export default async function ToolsPage({
 
                     {/* Gated programmes get the emphasis. Tools that are free
                         to everyone are stated plainly instead of dressed up as
-                        a nonprofit perk. */}
-                    {tool.requires_nonprofit_status === false ? (
-                      <div className="rounded-lg border border-line bg-surface-raised px-2.5 py-1.5 text-xs leading-relaxed text-fg-muted">
-                        <span className="font-medium text-fg">Open to anyone</span>
-                        {tool.nonprofit_deal ? ` — ${tool.nonprofit_deal}` : ''}
-                      </div>
-                    ) : tool.nonprofit_deal ? (
-                      <div className="text-xs text-accent bg-accent-subtle border border-accent-line rounded-lg px-2.5 py-1.5 line-clamp-2 leading-relaxed">
-                        🎁 {tool.nonprofit_deal}
-                      </div>
-                    ) : null}
+                        a nonprofit perk.
+
+                        Both branches clamp identically, and any trailing
+                        exclusion is lifted out of the clamped region into its
+                        own line so it cannot be the thing that gets cut. */}
+                    <DealSummary
+                      deal={tool.nonprofit_deal}
+                      open={tool.requires_nonprofit_status === false}
+                    />
 
                     <div className="flex items-center justify-between mt-auto pt-1">
                       <div className="flex items-center gap-2 flex-wrap">

@@ -5,6 +5,10 @@ import { createErrorResponse, createSuccessResponse } from '@/lib/api-helpers'
 import { claimUpsertSchema } from '@/lib/validations'
 import { resolveAppliedAt } from '@/lib/claims'
 
+/** Matches the uuid check the upsert schema applies to tool_id. */
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 /**
  * GET /api/claims — every claim the signed-in user has started.
  *
@@ -36,6 +40,62 @@ export async function GET() {
     }
 
     return createSuccessResponse({ claims: data ?? [] })
+  } catch (error) {
+    return createErrorResponse(
+      error instanceof Error ? error.message : 'Internal server error',
+      500
+    )
+  }
+}
+
+/**
+ * DELETE /api/claims?tool_id=… — drop the caller's claim for one tool.
+ *
+ * A claim started on the wrong tool was previously permanent: the API could
+ * create and update, never remove, so the only exit was to leave a false row
+ * on the dashboard forever.
+ *
+ * RLS already scopes tool_claims to the caller, but the delete is filtered on
+ * user_id explicitly as well, so ownership does not rest on a policy alone.
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return createErrorResponse('Unauthorized', 401)
+    }
+
+    const toolId = request.nextUrl.searchParams.get('tool_id')
+    if (!toolId) {
+      return createErrorResponse('tool_id is required', 400)
+    }
+    if (!UUID_PATTERN.test(toolId)) {
+      return createErrorResponse('Invalid tool ID', 400)
+    }
+
+    const { data: deleted, error: deleteError } = await supabase
+      .from('tool_claims')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('tool_id', toolId)
+      .select('tool_id')
+
+    if (deleteError) {
+      return createErrorResponse(deleteError.message, 500)
+    }
+
+    // Nothing matched: either no such claim, or it belongs to someone else.
+    // Both are the same answer to this caller.
+    if (!deleted || deleted.length === 0) {
+      return createErrorResponse('Claim not found', 404)
+    }
+
+    return createSuccessResponse({ tool_id: toolId }, 200, 'Claim removed')
   } catch (error) {
     return createErrorResponse(
       error instanceof Error ? error.message : 'Internal server error',

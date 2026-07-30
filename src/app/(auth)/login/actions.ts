@@ -2,12 +2,17 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { nextQuery, safeNextPath } from '@/components/auth/next-param'
 
 export async function login(formData: FormData) {
   const supabase = await createClient()
 
   const email = (formData.get('email') as string) ?? ''
   const password = (formData.get('password') as string) ?? ''
+  // Submitted as a hidden field from the login form, which in turn got it from
+  // `?next=`. Validated here rather than trusting the render-time check — a
+  // form field is exactly as forgeable as a query string.
+  const next = safeNextPath(formData.get('next'))
 
   const { error } = await supabase.auth.signInWithPassword({ email, password })
 
@@ -21,8 +26,12 @@ export async function login(formData: FormData) {
       (error as { code?: string }).code === 'email_not_confirmed' ||
       /email.*not.*confirmed/i.test(error.message)
 
-    redirect(`/login?error=${isUnconfirmed ? 'unconfirmed' : 'invalid'}`)
+    // Keep `next` across the retry so a mistyped password doesn't cost the
+    // user their place in the journey.
+    redirect(
+      `/login?error=${isUnconfirmed ? 'unconfirmed' : 'invalid'}${nextQuery(next, '&')}`
+    )
   }
 
-  redirect('/dashboard')
+  redirect(next)
 }

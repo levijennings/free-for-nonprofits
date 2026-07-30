@@ -2,15 +2,22 @@ import Link from 'next/link'
 import { login } from './actions'
 import PasswordInput from '@/components/ui/PasswordInput'
 import ResendConfirmationForm from '@/components/auth/ResendConfirmationForm'
+import { DEFAULT_NEXT, nextQuery, safeNextPath } from '@/components/auth/next-param'
 
 interface Props {
-  searchParams: { error?: string }
+  searchParams: { error?: string; next?: string }
 }
 
 export default function LoginPage({ searchParams }: Props) {
   // '1' is a legacy alias for 'invalid', kept in case any old links/bookmarks
   // still point at ?error=1.
   const errorType = searchParams.error === '1' ? 'invalid' : searchParams.error
+
+  // Where the user was headed before we interrupted them. Validated on the way
+  // in as well as in the server action, so a hostile `?next=` never reaches
+  // the markup as a link target either.
+  const next = safeNextPath(searchParams.next)
+  const nextSuffix = nextQuery(next)
 
   return (
     <div className="min-h-screen bg-surface-subtle flex items-center justify-center px-4">
@@ -40,13 +47,21 @@ export default function LoginPage({ searchParams }: Props) {
 
         <div className="bg-surface rounded-2xl shadow-1 border border-line p-8">
           <form action={login} className="space-y-5">
+            {/* Carries the pre-auth destination through the POST. */}
+            {next !== DEFAULT_NEXT && <input type="hidden" name="next" value={next} />}
+
             <div>
-              <label className="block text-sm font-medium text-fg mb-1.5">Email</label>
+              <label htmlFor="login-email" className="block text-sm font-medium text-fg mb-1.5">
+                Email
+              </label>
               <input
+                id="login-email"
                 type="email"
                 name="email"
                 required
                 autoComplete="email"
+                aria-describedby={errorType === 'invalid' ? 'login-error' : undefined}
+                aria-invalid={errorType === 'invalid' || undefined}
                 placeholder="you@yournonprofit.org"
                 className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
               />
@@ -54,22 +69,34 @@ export default function LoginPage({ searchParams }: Props) {
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-fg">Password</label>
-                <Link href="/reset-password" className="text-xs text-accent hover:text-accent-hover transition-colors">
+                <label htmlFor="login-password" className="block text-sm font-medium text-fg">
+                  Password
+                </label>
+                <Link
+                  href={`/reset-password${nextSuffix}`}
+                  className="text-xs text-accent hover:text-accent-hover transition-colors"
+                >
                   Forgot password?
                 </Link>
               </div>
               <PasswordInput
+                id="login-password"
                 name="password"
                 required
                 autoComplete="current-password"
+                aria-describedby={errorType === 'invalid' ? 'login-error' : undefined}
+                aria-invalid={errorType === 'invalid' || undefined}
                 placeholder="••••••••"
                 className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
               />
             </div>
 
             {errorType === 'invalid' && (
-              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+              <div
+                id="login-error"
+                role="alert"
+                className="bg-status-warn-bg border border-status-warn/30 rounded-lg px-4 py-3 text-sm text-status-warn"
+              >
                 Invalid email or password. Please try again.
               </div>
             )}
@@ -89,19 +116,22 @@ export default function LoginPage({ searchParams }: Props) {
               in practice means the link was expired or already used. */}
           {(errorType === 'unconfirmed' || errorType === 'auth_callback_failed') && (
             <div className="mt-5 space-y-3">
-              <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
+              <div
+                role="alert"
+                className="bg-status-progress-bg border border-status-progress/30 rounded-lg px-4 py-3 text-sm text-fg"
+              >
                 {errorType === 'auth_callback_failed'
                   ? 'That confirmation link has expired or has already been used. Enter your email below and we’ll send you a new one.'
                   : 'Your email hasn’t been confirmed yet. Check your inbox for the confirmation link, or resend it below.'}
               </div>
-              <ResendConfirmationForm />
+              <ResendConfirmationForm next={next} />
             </div>
           )}
 
           <div className="mt-6 text-center">
             <p className="text-sm text-fg-muted">
               Don&apos;t have an account?{' '}
-              <Link href="/signup" className="text-accent font-medium hover:text-accent-hover transition-colors">
+              <Link href={`/signup${nextSuffix}`} className="text-accent font-medium hover:text-accent-hover transition-colors">
                 Create one free
               </Link>
             </p>

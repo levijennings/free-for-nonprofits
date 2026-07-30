@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Field } from '@/components/ui/Field'
 
 const CATEGORIES = [
   { slug: 'crm-donor-management',   name: 'CRM & Donor Management', icon: '🤝' },
@@ -71,38 +72,46 @@ export default function SurveyForm({ initial }: { initial: SurveyData }) {
     <div className="space-y-6">
       <div className="bg-surface rounded-2xl border border-line p-6 space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-semibold text-fg-muted mb-1.5">What's your mission area?</label>
-            <select value={form.mission_area} onChange={e => set('mission_area', e.target.value)} className={SELECT_CLASS}>
-              <option value="">Select…</option>
-              {MISSION_AREAS.map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-fg-muted mb-1.5">Team size</label>
-            <select value={form.team_size} onChange={e => set('team_size', e.target.value)} className={SELECT_CLASS}>
-              <option value="">Select…</option>
-              {TEAM_SIZES.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-fg-muted mb-1.5">Your role</label>
-            <select value={form.role} onChange={e => set('role', e.target.value)} className={SELECT_CLASS}>
-              <option value="">Select…</option>
-              {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-fg-muted mb-1.5">Monthly software budget</label>
-            <select value={form.budget} onChange={e => set('budget', e.target.value)} className={SELECT_CLASS}>
-              <option value="">Select…</option>
-              {BUDGETS.map(b => <option key={b} value={b}>{b}</option>)}
-            </select>
-          </div>
+          <Field label="What&apos;s your mission area?">
+            {(field) => (
+              <select {...field} value={form.mission_area} onChange={e => set('mission_area', e.target.value)} className={SELECT_CLASS}>
+                <option value="">Select…</option>
+                {MISSION_AREAS.map(x => <option key={x} value={x}>{x}</option>)}
+              </select>
+            )}
+          </Field>
+          <Field label="Team size">
+            {(field) => (
+              <select {...field} value={form.team_size} onChange={e => set('team_size', e.target.value)} className={SELECT_CLASS}>
+                <option value="">Select…</option>
+                {TEAM_SIZES.map(x => <option key={x} value={x}>{x}</option>)}
+              </select>
+            )}
+          </Field>
+          <Field label="Your role">
+            {(field) => (
+              <select {...field} value={form.role} onChange={e => set('role', e.target.value)} className={SELECT_CLASS}>
+                <option value="">Select…</option>
+                {ROLES.map(x => <option key={x} value={x}>{x}</option>)}
+              </select>
+            )}
+          </Field>
+          <Field label="Monthly software budget">
+            {(field) => (
+              <select {...field} value={form.budget} onChange={e => set('budget', e.target.value)} className={SELECT_CLASS}>
+                <option value="">Select…</option>
+                {BUDGETS.map(x => <option key={x} value={x}>{x}</option>)}
+              </select>
+            )}
+          </Field>
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-fg-muted mb-2">Which areas do you most need tools for?</label>
+        {/* A <label> names a single control; this is a set of twelve toggles.
+            fieldset/legend is the element that names a group, so each button
+            is now announced inside "Which areas do you most need tools for?"
+            instead of on its own. */}
+        <fieldset>
+          <legend className="block text-sm font-semibold text-fg-muted mb-2">Which areas do you most need tools for?</legend>
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map(c => {
               const on = form.need_areas.includes(c.slug)
@@ -110,25 +119,28 @@ export default function SurveyForm({ initial }: { initial: SurveyData }) {
                 <button
                   key={c.slug}
                   type="button"
+                  aria-pressed={on}
                   onClick={() => toggleNeed(c.slug)}
                   className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${on ? 'bg-accent border-accent text-accent-fg' : 'bg-surface border-line text-fg-muted hover:border-accent-line'}`}
                 >
-                  {c.icon} {c.name}
+                  <span aria-hidden="true">{c.icon}</span> {c.name}
                 </button>
               )
             })}
           </div>
-        </div>
+        </fieldset>
 
-        <div>
-          <label className="block text-sm font-semibold text-fg-muted mb-1.5">What tools does your team use today? <span className="font-normal text-fg-subtle">(optional)</span></label>
-          <input type="text" value={form.current_tools} onChange={e => set('current_tools', e.target.value)} placeholder="e.g. Mailchimp, QuickBooks, Canva" className={TEXT_CLASS} />
-        </div>
+        <Field label="What tools does your team use today?" hint="Optional.">
+          {(field) => (
+            <input {...field} type="text" value={form.current_tools} onChange={e => set('current_tools', e.target.value)} placeholder="e.g. Mailchimp, QuickBooks, Canva" className={TEXT_CLASS} />
+          )}
+        </Field>
 
-        <div>
-          <label className="block text-sm font-semibold text-fg-muted mb-1.5">Biggest tech or tooling pain point? <span className="font-normal text-fg-subtle">(optional)</span></label>
-          <textarea value={form.pain_points} onChange={e => set('pain_points', e.target.value)} rows={3} maxLength={500} placeholder="What's hardest right now?" className={`${TEXT_CLASS} resize-none`} />
-        </div>
+        <Field label="Biggest tech or tooling pain point?" hint="Optional.">
+          {(field) => (
+            <textarea {...field} value={form.pain_points} onChange={e => set('pain_points', e.target.value)} rows={3} maxLength={500} placeholder="What&apos;s hardest right now?" className={`${TEXT_CLASS} resize-none`} />
+          )}
+        </Field>
       </div>
 
       <div className="flex items-center gap-4">
@@ -139,8 +151,8 @@ export default function SurveyForm({ initial }: { initial: SurveyData }) {
         >
           {status === 'saving' ? 'Saving…' : 'Save & personalize'}
         </button>
-        {status === 'saved' && <span className="text-sm text-status-done font-medium">Saved — your recommendations are now tailored.</span>}
-        {status === 'error' && <span className="text-sm text-status-warn font-medium">Something went wrong. Please try again.</span>}
+        {status === 'saved' && <span role="status" className="text-sm text-status-done font-medium">Saved — your recommendations are now tailored.</span>}
+        {status === 'error' && <span role="alert" className="text-sm text-status-warn font-medium">Something went wrong. Please try again.</span>}
       </div>
     </div>
   )

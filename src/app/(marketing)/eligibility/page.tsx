@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import EligibilityForm from '@/components/eligibility/EligibilityForm'
+import ResultsHeading from '@/components/eligibility/ResultsHeading'
 import ToolLogo from '@/components/tools/ToolLogo'
 import {
   ELIGIBILITY_COLUMNS,
@@ -79,26 +80,69 @@ export default async function EligibilityPage({
 
 async function Results({ answers }: { answers: EligibilityAnswers }) {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('tools')
     .select(ELIGIBILITY_COLUMNS)
     .eq('is_verified', true)
     .order('annual_value_usd', { ascending: false, nullsFirst: false })
     .order('name')
 
-  const rows = (data ?? []) as unknown as Row[]
-  const snap = buildSnapshot(rows, answers)
-
   const orgLabel = ORG_TYPES.find((o) => o.value === answers.orgType)?.label ?? ''
+  const countryLabel = COUNTRIES.find((c) => c.value === answers.country)?.label ?? ''
+  const signature = `${answers.orgType}|${answers.country}|${answers.budgetUsd}`
+
+  // The whole proposition of this page is that the answer is accurate. A failed
+  // read must never be reported as "0 programmes you can apply for" — that is a
+  // confident factual claim about the user's eligibility, invented from an
+  // outage. Say what happened instead, and give them the reload.
+  if (error || !data) {
+    return (
+      <div className="mt-12">
+        <section className="rounded-lg border border-line bg-surface p-6 sm:p-8">
+          <ResultsHeading
+            signature={signature}
+            className="text-h3 font-semibold text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"
+          >
+            We could not check the catalogue just now
+          </ResultsHeading>
+          <p className="mt-2 max-w-prose text-fg-muted">
+            Your answers are fine — the lookup failed on our side, so we have no result
+            to show you. We would rather say that than show you a zero we cannot stand
+            behind.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link
+              href={`/eligibility?${answerQuery(answers)}`}
+              className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-accent-fg transition-colors duration-fast hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"
+            >
+              Try again
+            </Link>
+            <Link
+              href="/tools"
+              className="rounded-md border border-line px-5 py-2.5 text-sm font-semibold text-fg-muted transition-colors duration-fast hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"
+            >
+              Browse the full catalogue
+            </Link>
+          </div>
+        </section>
+      </div>
+    )
+  }
+
+  const rows = data as unknown as Row[]
+  const snap = buildSnapshot(rows, answers)
+  const noneEligible = snap.eligible.length === 0
 
   return (
     <div className="mt-12 space-y-10">
       {/* ---------- Headline ---------- */}
       <section className="rounded-lg border border-accent-line bg-accent-subtle p-6 sm:p-8">
-        <p className="text-sm text-fg-muted">
-          For a {orgLabel.toLowerCase()} in{' '}
-          {COUNTRIES.find((c) => c.value === answers.country)?.label}
-        </p>
+        <ResultsHeading
+          signature={signature}
+          className="text-sm text-fg-muted focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus"
+        >
+          For a {orgLabel.toLowerCase()} in {countryLabel}
+        </ResultsHeading>
         <p className="mt-2 text-display font-bold tabular-nums text-fg">
           {snap.eligible.length}
         </p>
@@ -106,22 +150,26 @@ async function Results({ answers }: { answers: EligibilityAnswers }) {
           programme{snap.eligible.length === 1 ? '' : 's'} you can apply for
         </p>
 
-        <div className="mt-6 grid gap-4 border-t border-accent-line pt-6 sm:grid-cols-3">
-          <Stat
-            value={snap.knownValueUsd > 0 ? formatUsd(snap.knownValueUsd) : '—'}
-            label={`confirmed annual value, across ${snap.valuedCount} programme${snap.valuedCount === 1 ? '' : 's'}`}
-          />
-          <Stat
-            value={String(snap.unvaluedCount)}
-            label="worth real money, but no vendor publishes a figure"
-          />
-          <Stat
-            value={String(snap.open.length)}
-            label="tools free to anyone, nonprofit or not"
-          />
-        </div>
+        {/* At zero every one of these reads as a dash or a nought, which tells
+            the user nothing. The explanation below carries the answer instead. */}
+        {!noneEligible && (
+          <div className="mt-6 grid gap-4 border-t border-accent-line pt-6 sm:grid-cols-3">
+            <Stat
+              value={snap.knownValueUsd > 0 ? formatUsd(snap.knownValueUsd) : '—'}
+              label={`confirmed annual value, across ${snap.valuedCount} programme${snap.valuedCount === 1 ? '' : 's'}`}
+            />
+            <Stat
+              value={String(snap.unvaluedCount)}
+              label="worth real money, but no vendor publishes a figure"
+            />
+            <Stat
+              value={String(snap.open.length)}
+              label="tools free to anyone, nonprofit or not"
+            />
+          </div>
+        )}
 
-        {snap.unvaluedCount > 0 && (
+        {!noneEligible && snap.unvaluedCount > 0 && (
           <p className="mt-5 max-w-prose text-sm text-fg-muted">
             The dollar figure counts only programmes where the vendor states a number.
             Most do not, so treat it as a floor — not an estimate of what you would save.
@@ -130,15 +178,24 @@ async function Results({ answers }: { answers: EligibilityAnswers }) {
       </section>
 
       {/* ---------- Eligible ---------- */}
-      <Section
-        title="Programmes you can apply for"
-        note="Each of these gates on nonprofit status, and you meet the stated criteria."
-        count={snap.eligible.length}
-      >
-        {snap.eligible.map((tool) => (
-          <ToolRow key={tool.id} tool={tool} showValue />
-        ))}
-      </Section>
+      {noneEligible ? (
+        <NothingEligible
+          orgLabel={orgLabel}
+          countryLabel={countryLabel}
+          ineligibleCount={snap.ineligible.length}
+          openCount={snap.open.length}
+        />
+      ) : (
+        <Section
+          title="Programmes you can apply for"
+          note="Each of these gates on nonprofit status, and you meet the stated criteria."
+          count={snap.eligible.length}
+        >
+          {snap.eligible.map((tool) => (
+            <ToolRow key={tool.id} tool={tool} showValue />
+          ))}
+        </Section>
+      )}
 
       {/* ---------- Ineligible: the trust-builder ----------
           Collapsed by default. It is the most credibility-building thing on
@@ -146,16 +203,18 @@ async function Results({ answers }: { answers: EligibilityAnswers }) {
       {snap.ineligible.length > 0 && (
         <details className="group rounded-lg border border-line bg-surface">
           <summary className="cursor-pointer list-none px-5 py-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus">
-            <span className="flex flex-wrap items-baseline justify-between gap-2">
-              <span className="text-h3 font-semibold text-fg">
+            {/* A real heading, not a styled span: this is the largest section on
+                the page, and as a span it was invisible to heading navigation. */}
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h3 className="text-h3 font-semibold text-fg">
                 Not open to you{' '}
                 <span className="font-normal tabular-nums text-fg-subtle">
                   ({snap.ineligible.length})
                 </span>
-              </span>
+              </h3>
               <span className="text-sm text-accent group-open:hidden">Show the reasons →</span>
               <span className="hidden text-sm text-fg-subtle group-open:inline">Hide</span>
-            </span>
+            </div>
             <span className="mt-1 block max-w-prose text-sm text-fg-muted">
               Every one listed with the reason, so you do not waste an afternoon finding
               out the hard way.
@@ -186,6 +245,7 @@ async function Results({ answers }: { answers: EligibilityAnswers }) {
 
       {/* ---------- Open to all ---------- */}
       <Section
+        id="free-to-anyone"
         title="Free to anyone"
         note="Genuinely useful, but being a nonprofit gets you nothing extra here. There is nothing to apply for."
         count={snap.open.length}
@@ -212,6 +272,75 @@ async function Results({ answers }: { answers: EligibilityAnswers }) {
   )
 }
 
+/** The query string that reproduces this exact result. */
+function answerQuery(answers: EligibilityAnswers): string {
+  const params = new URLSearchParams()
+  if (answers.orgType) params.set('org', answers.orgType)
+  if (answers.country) params.set('country', answers.country)
+  if (answers.budgetUsd !== null) params.set('budget', String(answers.budgetUsd))
+  return params.toString()
+}
+
+/**
+ * Zero eligible programmes is a real answer, not an empty state — but on its
+ * own it is a number with no meaning and no next step. It happens for a
+ * specific, explainable reason (org type or country, almost always), and there
+ * is always somewhere to go from here.
+ */
+function NothingEligible({
+  orgLabel,
+  countryLabel,
+  ineligibleCount,
+  openCount,
+}: {
+  orgLabel: string
+  countryLabel: string
+  ineligibleCount: number
+  openCount: number
+}) {
+  return (
+    <section className="rounded-lg border border-line bg-surface p-6 sm:p-8">
+      <h3 className="text-h3 font-semibold text-fg">
+        Nothing in the catalogue is open to you yet
+      </h3>
+      <p className="mt-2 max-w-prose text-sm text-fg-muted">
+        That is not a glitch, and it is not about your organisation being too small.
+        Nonprofit programmes are written around US 501(c)(3) charities: a{' '}
+        {orgLabel.toLowerCase()} registered in {countryLabel} falls outside the criteria
+        most vendors publish.{' '}
+        {ineligibleCount > 0 && (
+          <>
+            All {ineligibleCount} of the gated programmes we track state a rule you do
+            not meet — each one is listed below with which rule it was.
+          </>
+        )}
+      </p>
+      <p className="mt-3 max-w-prose text-sm text-fg-muted">
+        Worth knowing: vendors change these rules, and several run country-specific
+        programmes through local partners that are not on their main page. It is worth
+        re-checking if your registration status changes.
+      </p>
+
+      <div className="mt-5 flex flex-wrap gap-3">
+        {openCount > 0 && (
+          <Link
+            href="#free-to-anyone"
+            className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-accent-fg transition-colors duration-fast hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"
+          >
+            See the {openCount} tool{openCount === 1 ? '' : 's'} you can still use
+          </Link>
+        )}
+        <Link
+          href="/tools"
+          className="rounded-md border border-line px-5 py-2.5 text-sm font-semibold text-fg-muted transition-colors duration-fast hover:border-line-strong hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"
+        >
+          Browse the full catalogue
+        </Link>
+      </div>
+    </section>
+  )
+}
+
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div>
@@ -222,12 +351,14 @@ function Stat({ value, label }: { value: string; label: string }) {
 }
 
 function Section({
+  id,
   title,
   note,
   count,
   muted = false,
   children,
 }: {
+  id?: string
   title: string
   note: string
   count: number
@@ -236,11 +367,12 @@ function Section({
 }) {
   if (count === 0) return null
   return (
-    <section>
-      <h2 className="text-h3 font-semibold text-fg">
+    <section id={id}>
+      {/* h3: the results heading is the h2 these all hang off. */}
+      <h3 className="text-h3 font-semibold text-fg">
         {title}{' '}
         <span className="font-normal tabular-nums text-fg-subtle">({count})</span>
-      </h2>
+      </h3>
       <p className="mb-4 mt-1 max-w-prose text-sm text-fg-muted">{note}</p>
       <div className={muted ? 'space-y-2' : 'grid gap-3 sm:grid-cols-2'}>{children}</div>
     </section>

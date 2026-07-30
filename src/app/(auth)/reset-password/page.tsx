@@ -1,15 +1,30 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { Field } from '@/components/ui/Field'
+import { DEFAULT_NEXT, nextQuery, safeNextPath } from '@/components/auth/next-param'
 
-export default function ResetPasswordPage() {
+export default function ResetPasswordPage({ searchParams }: { searchParams?: { next?: string } }) {
+  // Preserved so a password reset started mid-journey returns the user to the
+  // page they were on. Validated here and again in /auth/callback.
+  const next = safeNextPath(searchParams?.next)
+  const nextSuffix = nextQuery(next)
+
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
   const supabase = createClient()
+
+  // Field renders the message with role="alert" and wires aria-describedby, so
+  // returning focus to the input both announces the error and puts the user on
+  // the control they need to correct.
+  const emailRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (error) emailRef.current?.focus()
+  }, [error])
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -17,7 +32,7 @@ export default function ResetPasswordPage() {
     setError('')
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+      redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next || DEFAULT_NEXT)}`,
     })
 
     if (error) {
@@ -42,7 +57,7 @@ export default function ResetPasswordPage() {
           <p className="text-fg-muted mb-6">
             We sent a password reset link to <strong>{email}</strong>.
           </p>
-          <Link href="/login" className="text-accent font-medium hover:text-accent-hover transition-colors">
+          <Link href={`/login${nextSuffix}`} className="text-accent font-medium hover:text-accent-hover transition-colors">
             Back to sign in →
           </Link>
         </div>
@@ -78,24 +93,20 @@ export default function ResetPasswordPage() {
 
         <div className="bg-surface rounded-2xl shadow-1 border border-line p-8">
           <form onSubmit={handleReset} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-fg mb-1.5">Email</label>
-              <input
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@yournonprofit.org"
-                className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
-                {error}
-              </div>
-            )}
+            <Field label="Email" required error={error || undefined}>
+              {(field) => (
+                <input
+                  {...field}
+                  ref={emailRef}
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@yournonprofit.org"
+                  className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+                />
+              )}
+            </Field>
 
             <button
               type="submit"
@@ -107,7 +118,7 @@ export default function ResetPasswordPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <Link href="/login" className="text-sm text-accent font-medium hover:text-accent-hover transition-colors">
+            <Link href={`/login${nextSuffix}`} className="text-sm text-accent font-medium hover:text-accent-hover transition-colors">
               ← Back to sign in
             </Link>
           </div>

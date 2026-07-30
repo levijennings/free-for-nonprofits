@@ -1,15 +1,23 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Turnstile from '@/components/Turnstile'
 import PasswordInput from '@/components/ui/PasswordInput'
+import { Field } from '@/components/ui/Field'
 import { getPasswordStrength } from '@/lib/password-strength'
+import { nextQuery, safeNextPath } from '@/components/auth/next-param'
 
 // Captcha is active only when a site key is configured.
 const CAPTCHA_ENABLED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
-export default function SignupPage() {
+export default function SignupPage({ searchParams }: { searchParams?: { next?: string } }) {
+  // Carried from wherever signup was triggered (e.g. a tool page's "track this
+  // application"), validated before it is used as a link target or sent on to
+  // the API, which validates it again.
+  const next = safeNextPath(searchParams?.next)
+  const nextSuffix = nextQuery(next)
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [orgName, setOrgName] = useState('')
@@ -28,6 +36,14 @@ export default function SignupPage() {
   // and submit within a second or two of hitting the page land far below
   // MIN_FILL_TIME_MS on the server and are silently dropped.
   const formRenderedAt = useRef(Date.now())
+
+  // Submit failures used to be silent: focus stayed on the button, nothing was
+  // announced, and the form looked hung. Moving focus to the alert both speaks
+  // the message and puts the user next to it.
+  const errorRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (error) errorRef.current?.focus()
+  }, [error])
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,6 +67,7 @@ export default function SignupPage() {
         honeypot,
         formRenderedAt: formRenderedAt.current,
         captchaToken: captchaToken || undefined,
+        next,
       }),
     })
 
@@ -81,7 +98,7 @@ export default function SignupPage() {
           <p className="text-fg-muted mb-6">
             We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
           </p>
-          <Link href="/login" className="text-accent font-medium hover:text-accent-hover transition-colors">
+          <Link href={`/login${nextSuffix}`} className="text-accent font-medium hover:text-accent-hover transition-colors">
             Back to sign in →
           </Link>
         </div>
@@ -124,67 +141,69 @@ export default function SignupPage() {
 
         <div className="bg-surface rounded-2xl shadow-1 border border-line p-8">
           <form onSubmit={handleSignup} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-fg mb-1.5">
-                Organization name
-              </label>
-              <input
-                type="text"
-                autoComplete="organization"
-                value={orgName}
-                onChange={(e) => setOrgName(e.target.value)}
-                placeholder="Habitat for Humanity Chicago"
-                className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-              />
-              <p className="mt-1 text-xs text-fg-subtle">
-                Shown to other nonprofits on your reviews and activity. Leave blank to stay unlabeled.
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-fg mb-1.5">
-                Work email <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@yournonprofit.org"
-                className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-fg mb-1.5">
-                Password <span className="text-red-500">*</span>
-              </label>
-              <PasswordInput
-                required
-                minLength={8}
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 8 characters"
-                className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
-              />
-              {password && (
-                <div className="mt-1.5">
-                  <div className="flex gap-1">
-                    {[0, 1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className={`h-1 flex-1 rounded-full transition-colors ${
-                          i < strength.score ? strength.barColor : 'bg-surface-inset'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <p className="mt-1 text-xs text-fg-subtle">{strength.label}</p>
-                </div>
+            <Field
+              label="Organization name"
+              hint="Shown to other nonprofits on your reviews and activity. Leave blank to stay unlabeled."
+            >
+              {(field) => (
+                <input
+                  {...field}
+                  type="text"
+                  autoComplete="organization"
+                  value={orgName}
+                  onChange={(e) => setOrgName(e.target.value)}
+                  placeholder="Habitat for Humanity Chicago"
+                  className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+                />
               )}
-            </div>
+            </Field>
+
+            <Field label="Work email" required>
+              {(field) => (
+                <input
+                  {...field}
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@yournonprofit.org"
+                  className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+                />
+              )}
+            </Field>
+
+            <Field label="Password" required>
+              {(field) => (
+                <>
+                  <PasswordInput
+                    {...field}
+                    minLength={8}
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="At least 8 characters"
+                    className="w-full px-4 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-focus focus:border-transparent"
+                  />
+                  {password && (
+                    <div className="mt-1.5">
+                      <div className="flex gap-1" aria-hidden="true">
+                        {[0, 1, 2, 3].map((i) => (
+                          <div
+                            key={i}
+                            className={`h-1 flex-1 rounded-full transition-colors ${
+                              i < strength.score ? strength.barColor : 'bg-surface-inset'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className="mt-1 text-xs text-fg-subtle" aria-live="polite">
+                        Password strength: {strength.label}
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+            </Field>
 
             {/*
               Honeypot: invisible to real visitors (off-screen, unfocusable,
@@ -209,7 +228,12 @@ export default function SignupPage() {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+              <div
+                ref={errorRef}
+                role="alert"
+                tabIndex={-1}
+                className="bg-status-warn-bg border border-status-warn/30 rounded-lg px-4 py-3 text-sm text-status-warn"
+              >
                 <p>{error}</p>
                 {supportEmail && (
                   <p className="mt-2">
@@ -236,7 +260,7 @@ export default function SignupPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-fg-muted">
               Already have an account?{' '}
-              <Link href="/login" className="text-accent font-medium hover:text-accent-hover transition-colors">
+              <Link href={`/login${nextSuffix}`} className="text-accent font-medium hover:text-accent-hover transition-colors">
                 Sign in
               </Link>
             </p>

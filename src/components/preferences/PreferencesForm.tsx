@@ -92,6 +92,8 @@ export default function PreferencesForm({ initial }: Props) {
             return (
               <button
                 key={cat.slug}
+                type="button"
+                aria-pressed={selected}
                 onClick={() => toggleCat(cat.slug)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
                   selected
@@ -126,6 +128,8 @@ export default function PreferencesForm({ initial }: Props) {
             return (
               <button
                 key={p.value}
+                type="button"
+                aria-pressed={selected}
                 onClick={() => togglePricing(p.value)}
                 className={`p-4 rounded-xl border-2 text-left transition-all ${
                   selected ? p.color + ' border-current' : 'bg-surface border-line hover:border-line-strong'
@@ -154,22 +158,38 @@ export default function PreferencesForm({ initial }: Props) {
       <section className="bg-surface rounded-2xl border border-line p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-bold text-fg">Email notifications</h2>
-            <p className="text-sm text-fg-subtle mt-0.5">Get emailed when a tool matching your preferences is added</p>
+            <h2 className="font-bold text-fg" id="notify-label">Email notifications</h2>
+            <p className="text-sm text-fg-subtle mt-0.5" id="notify-desc">
+              Get emailed when a tool matching your preferences is added
+            </p>
           </div>
+          {/*
+            role="switch" + aria-checked is what turns "button" into
+            "Email notifications, switch, on". Without them the only cue that
+            this control even had two states was the knob sliding across —
+            information available to exactly the people who least need it.
+          */}
           <button
+            type="button"
+            role="switch"
+            aria-checked={notify}
+            aria-labelledby="notify-label"
+            aria-describedby="notify-desc"
             onClick={() => setNotify(n => !n)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-focus ${
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
               notify ? 'bg-accent' : 'bg-line-strong'
             }`}
           >
-            <span className={`inline-block h-4 w-4 rounded-full bg-surface shadow transform transition-transform ${
-              notify ? 'translate-x-6' : 'translate-x-1'
-            }`} />
+            <span
+              aria-hidden="true"
+              className={`inline-block h-4 w-4 rounded-full bg-surface shadow transform transition-transform ${
+                notify ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
           </button>
         </div>
         {!notify && (
-          <p className="mt-3 text-xs text-status-progress bg-status-progress-bg rounded-lg px-3 py-2">
+          <p className="mt-3 text-xs text-fg-muted bg-status-progress-bg rounded-lg px-3 py-2">
             Notifications are off — you won't be alerted when matching tools are added.
           </p>
         )}
@@ -185,11 +205,13 @@ export default function PreferencesForm({ initial }: Props) {
           {status === 'saving' ? 'Saving…' : 'Save preferences'}
         </button>
 
+        {/* Both outcomes are async and land nowhere near where focus sits, so
+            they are announced rather than merely rendered. */}
         {status === 'saved' && (
-          <span className="text-sm text-status-done font-medium">✓ Saved!</span>
+          <span role="status" className="text-sm text-status-done font-medium">✓ Saved!</span>
         )}
         {status === 'error' && (
-          <span className="text-sm text-status-warn">Error saving. Please try again.</span>
+          <span role="alert" className="text-sm text-status-warn">Error saving. Please try again.</span>
         )}
         {status === 'idle' && hasChanges && (
           <span className="text-xs text-fg-subtle">You have unsaved changes</span>

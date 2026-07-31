@@ -110,39 +110,202 @@ function splitDeal(deal: string): { body: string; caveat: string | null } {
 }
 
 /**
+ * How much text fits on one rendered line of a deal box.
+ *
+ * `line-clamp` is a paint-time cut: it stops at whatever character reaches the
+ * box edge, so the last visible word is usually a fragment ("…open to everyone
+ * an…") and, worse, it can leave the opening of an exclusion list standing
+ * alone ("Schools, hospitals…"). The only way to break on a word is to do it
+ * here, in the server render, against a character budget.
+ *
+ * The budget has to hold at the narrowest column the grid can produce. Two
+ * candidates, both measured rather than guessed:
+ *
+ *   xl, 3 columns @1280px: 1280 − 64 page padding − 224 sidebar − 32 gap
+ *     = 960 grid; (960 − 32 of gaps) / 3 = 309px column; − 40 card padding
+ *     − 22 box padding and borders = 247px of text.
+ *   sm, 2 columns @640px (no sidebar): (640 − 48) = 592; (592 − 16) / 2
+ *     = 288px column; − 62 = 226px of text — narrower still, so this is the
+ *     one the budget is sized for.
+ *
+ * Text is 13px Plus Jakarta Sans (`text-xs`). Its average advance over this
+ * catalogue is 6.1–6.5px per character, and greedy wrapping wastes another
+ * ~8% to the ragged right edge, which puts a safe line at 226 / 6.5 / 1.08 ≈
+ * 31 characters. The warning box loses a further 19px to the ⚠ marker and its
+ * gap on *every* line, so it gets 29.
+ *
+ * Both numbers were verified by wrapping all 104 live `nonprofit_deal` values
+ * with the real font metrics: at 31/29 nothing rendered here exceeds its
+ * clamp at either width, so the CSS clamp never actually fires and no cut is
+ * ever visible. The clamps stay as a backstop for pathological input (an
+ * unbroken 200-character token), which bounds height even if the estimate is
+ * wrong.
+ */
+const OFFER_CHARS_PER_LINE = 31
+const CAVEAT_CHARS_PER_LINE = 29
+/** "🎁 " and "Open to anyone — " sit inline and eat into the offer's budget. */
+const GIFT_PREFIX_CHARS = 3
+const OPEN_PREFIX_CHARS = 18
+
+const ELLIPSIS = '…'
+
+/**
+ * Shown when a condition exists but cannot be rendered whole in the space.
+ * A generic warning is worth more than the first four words of an exclusion
+ * list, which reads as though the list were the whole condition.
+ */
+const CAVEAT_SIGNAL = 'Exclusions apply — see details'
+
+/** Cut at the last space inside the budget, never mid-word. */
+function truncateWords(text: string, budget: number): string {
+  if (text.length <= budget) return text
+  const room = Math.max(1, budget - ELLIPSIS.length)
+  const head = text.slice(0, room + 1)
+  const lastSpace = head.lastIndexOf(' ')
+  // A single token longer than the whole budget has no word boundary to use.
+  const kept = lastSpace > 0 ? head.slice(0, lastSpace) : head.slice(0, room)
+  return kept.replace(/[\s,;:.!?—-]+$/, '') + ELLIPSIS
+}
+
+interface Fitted {
+  /** The sentences that fit, joined, with elision marked. */
+  text: string
+  /** Whole sentences that did not fit. */
+  dropped: string[]
+  /** The tail of the first sentence, when even that had to be cut. */
+  cutTail: string
+}
+
+/**
+ * Fill a budget with whole sentences.
+ *
+ * Sentence-atomic is the point: a sentence either appears in full or does not
+ * appear, so a condition can never be reduced to its opening clause. Only the
+ * very first sentence may be cut mid-way, and only because a card that shows
+ * nothing at all is worse than one that shows a trimmed opening line.
+ *
+ * Elision is marked by replacing the last sentence's full stop with an
+ * ellipsis, which costs no characters and so can never itself overflow.
+ *
+ * `skipOversized` keeps scanning past a sentence that does not fit instead of
+ * stopping there, so one long condition cannot hide every shorter one behind
+ * it.
+ */
+function fitSentences(sentences: string[], budget: number, skipOversized = false): Fitted {
+  const kept: string[] = []
+  const dropped: string[] = []
+  let used = 0
+
+  for (let i = 0; i < sentences.length; i++) {
+    const cost = (kept.length ? 1 : 0) + sentences[i].length
+    if (used + cost <= budget) {
+      kept.push(sentences[i])
+      used += cost
+    } else {
+      dropped.push(sentences[i])
+      if (!skipOversized) {
+        dropped.push(...sentences.slice(i + 1))
+        break
+      }
+    }
+  }
+
+  if (!kept.length) {
+    const text = truncateWords(sentences[0], budget)
+    return {
+      text,
+      dropped: sentences.slice(1),
+      cutTail: sentences[0].slice(text.length - ELLIPSIS.length),
+    }
+  }
+
+  const joined = kept.join(' ')
+  return {
+    text: dropped.length ? joined.replace(/[\s.!?—-]+$/, '') + ELLIPSIS : joined,
+    dropped,
+    cutTail: '',
+  }
+}
+
+/**
  * The deal line on a card.
  *
  * Previously the gated branch clamped at two lines and the open-to-anyone
  * branch had no clamp at all, so 30 cards rendered up to 277 characters and
- * blew out the grid while the other 74 hid their conditions. Both now clamp on
- * the same budget, and a trailing caveat is promoted out of the clamped block
- * so a reader scanning the grid can never be left with the good half of a
- * sentence and none of the bad half.
+ * blew out the grid while the other 74 hid their conditions. Promoting the
+ * trailing caveat fixed the rows where the exclusion was the last sentence —
+ * HubSpot's "New customers only, Starter excluded…" — but left the rows where
+ * it is not, because `line-clamp` was still doing the cutting. Miro, Adobe and
+ * Salesforce all sheared mid-word, and Adobe's cut landed on "Schools,
+ * hospitals…", the opening of an exclusion list.
+ *
+ * So the truncation happens here instead, and it works on three rules:
+ *
+ *   1. Sentences are atomic. Nothing is shown as a fragment except, at worst,
+ *      the opening sentence of the offer itself.
+ *   2. A condition squeezed out of the offer is promoted into the warning box
+ *      rather than dropped — which is the trailing-caveat behaviour, now
+ *      applied wherever the condition happens to sit in the sentence order.
+ *   3. If not one condition fits whole, the box says so in plain words.
+ *
+ * Height is bounded by construction: three lines of offer, four of conditions,
+ * and across the live catalogue nothing reaches more than six lines total,
+ * which is what the pair of clamps allowed before.
  */
 function DealSummary({ deal, open }: { deal: string | null; open: boolean }) {
   if (!deal && !open) return null
 
   const { body, caveat } = deal ? splitDeal(deal) : { body: '', caveat: null }
-  // No separate caveat → the deal gets the full three lines. With one → two
-  // lines of offer plus the conditions underneath. Either way it is bounded.
-  const bodyClamp = caveat ? 'line-clamp-2' : 'line-clamp-3'
+  const prefixChars = open ? OPEN_PREFIX_CHARS : GIFT_PREFIX_CHARS
+  const bodySentences = body ? splitSentences(body) : []
+
+  // Two lines of offer when there are already conditions to print underneath,
+  // three when the offer is the whole card.
+  const offerLines = caveat ? 2 : 3
+  const offer = bodySentences.length
+    ? fitSentences(bodySentences, offerLines * OFFER_CHARS_PER_LINE - prefixChars)
+    : { text: '', dropped: [], cutTail: '' }
+
+  // Anything limiting that the offer could not hold moves to the warning box
+  // instead of falling off the card.
+  const conditions = [
+    ...offer.dropped.filter((s) => CAVEAT_PATTERN.test(s)),
+    ...(caveat ? splitSentences(caveat) : []),
+  ]
+
+  const offerLinesUsed = offer.text
+    ? Math.min(offerLines, Math.max(1, Math.ceil((offer.text.length + prefixChars) / OFFER_CHARS_PER_LINE)))
+    : 0
+  // The warning box takes whatever the offer left, so the pair stays inside
+  // the same six lines however the content is distributed.
+  const caveatLines = Math.min(4, Math.max(3, 6 - offerLinesUsed))
+
+  let caveatText: string | null = null
+  if (conditions.length) {
+    const fitted = fitSentences(conditions, caveatLines * CAVEAT_CHARS_PER_LINE, true)
+    caveatText = fitted.cutTail ? CAVEAT_SIGNAL : fitted.text
+  } else if (CAVEAT_PATTERN.test(offer.cutTail)) {
+    // The offer's opening sentence was cut and the discarded half was the
+    // limiting part of it. Say so rather than let the card read as unqualified.
+    caveatText = CAVEAT_SIGNAL
+  }
 
   return (
     <div className="space-y-1.5">
       {open ? (
-        <div className={`rounded-lg border border-line bg-surface-raised px-2.5 py-1.5 text-xs leading-relaxed text-fg-muted ${bodyClamp}`}>
+        <div className="rounded-lg border border-line bg-surface-raised px-2.5 py-1.5 text-xs leading-relaxed text-fg-muted line-clamp-3">
           <span className="font-medium text-fg">Open to anyone</span>
-          {body ? ` — ${body}` : ''}
+          {offer.text ? ` — ${offer.text}` : ''}
         </div>
       ) : (
-        <div className={`text-xs text-accent bg-accent-subtle border border-accent-line rounded-lg px-2.5 py-1.5 leading-relaxed ${bodyClamp}`}>
-          🎁 {body}
+        <div className="text-xs text-accent bg-accent-subtle border border-accent-line rounded-lg px-2.5 py-1.5 leading-relaxed line-clamp-3">
+          🎁 {offer.text}
         </div>
       )}
-      {caveat && (
+      {caveatText && (
         <p className="flex gap-1.5 rounded-lg border border-status-warn/30 bg-status-warn-bg px-2.5 py-1.5 text-xs leading-relaxed text-status-warn">
           <span aria-hidden="true">⚠</span>
-          <span className="line-clamp-3">{caveat}</span>
+          <span className="line-clamp-4">{caveatText}</span>
         </p>
       )}
     </div>
@@ -406,9 +569,10 @@ export default async function ToolsPage({
                         to everyone are stated plainly instead of dressed up as
                         a nonprofit perk.
 
-                        Both branches clamp identically, and any trailing
-                        exclusion is lifted out of the clamped region into its
-                        own line so it cannot be the thing that gets cut. */}
+                        Both branches are trimmed on the server, on sentence
+                        and word boundaries, and any exclusion that will not fit
+                        beside the offer is lifted into its own line so it can
+                        never be the thing that gets cut. */}
                     <DealSummary
                       deal={tool.nonprofit_deal}
                       open={tool.requires_nonprofit_status === false}

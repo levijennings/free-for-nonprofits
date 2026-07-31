@@ -235,6 +235,29 @@ const pricingDescriptions: Record<string, string> = {
   nonprofit_discount: 'Nonprofits receive a special discount on this tool.',
 }
 
+/**
+ * The sidebar summary has to know whether the benefit is gated.
+ *
+ * "This tool is completely free to use" was rendering on programmes you have to
+ * apply for and can be refused — Slack, which is free only up to 250 members and
+ * excludes churches, schools, government and hospitals, read as unconditionally
+ * free. The pricing_model is correct in each case; what was wrong was stating it
+ * without the condition attached.
+ */
+function pricingSummary(model: string, gated: boolean | null): string {
+  if (gated !== true) return pricingDescriptions[model] ?? ''
+  switch (model) {
+    case 'free':
+      return 'Free for nonprofits that qualify — you have to apply, and the terms below are the ones the vendor states.'
+    case 'freemium':
+      return 'There is a free tier, and nonprofits that qualify get more. Applying is required.'
+    case 'nonprofit_discount':
+      return 'Discounted for nonprofits that qualify. You have to apply, and it can be refused.'
+    default:
+      return pricingDescriptions[model] ?? ''
+  }
+}
+
 export default async function ToolDetailPage({ params }: Props) {
   const supabase = await createClient()
 
@@ -501,7 +524,7 @@ export default async function ToolDetailPage({ params }: Props) {
               </div>
 
               <p className="text-sm text-fg-muted mb-4">
-                {pricingDescriptions[tool.pricing_model]}
+                {pricingSummary(tool.pricing_model, tool.requires_nonprofit_status)}
               </p>
 
               {/* Only call it a "Nonprofit Deal" when it actually is one.

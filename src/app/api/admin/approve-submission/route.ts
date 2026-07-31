@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient, isAdminEmail } from '@/lib/supabase/admin'
 import { sendNewToolMatchEmail } from '@/lib/email'
+import { revalidateTool } from '@/lib/tools/revalidate'
 
 function toSlug(name: string) {
   return name
@@ -70,6 +71,12 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (toolErr) return NextResponse.json({ error: toolErr.message }, { status: 500 })
+
+  // A newly published tool changes the catalogue, so the listing and every
+  // related-tools rail in its category have to be re-read. The email below
+  // links straight to /tools/<slug>, which would 404 against a cached
+  // catalogue that has not seen the row yet.
+  revalidateTool(slug)
 
   // Mark submission approved
   await admin

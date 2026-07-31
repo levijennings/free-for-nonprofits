@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient, isAdminEmail } from '@/lib/supabase/admin'
+import { revalidateTool } from '@/lib/tools/revalidate'
 
 const ALLOWED_FIELDS = [
   'is_verified',
@@ -51,5 +52,13 @@ export async function PATCH(
     return Response.json({ error: error.message }, { status: 500 })
   }
 
-  return Response.json({ tool: data })
+  // Publish the correction. Without this the edit lands in Postgres and the
+  // public page keeps serving the superseded terms for up to
+  // TOOL_CACHE_TTL_SECONDS — the one failure mode this site cannot afford.
+  // Done here rather than in the client form so it cannot be skipped by a
+  // caller that forgets, and so a failed follow-up request cannot leave the
+  // database and the site disagreeing.
+  revalidateTool(params.slug)
+
+  return Response.json({ tool: data, revalidated: params.slug })
 }

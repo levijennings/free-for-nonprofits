@@ -1,5 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
-import { createClient as createAnonClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -9,74 +7,46 @@ import ToolActions from '@/components/tools/ToolActions'
 import ClaimGuide from '@/components/tools/ClaimGuide'
 import ReviewForm from '@/components/reviews/ReviewForm'
 import ReviewsList from '@/components/reviews/ReviewsList'
-import type { EligibilityFields } from '@/lib/eligibility'
+import { createPublicClient, getRelatedTools, getToolDetail } from '@/lib/tools/queries'
 import { toolUrl } from '../site'
 
-// Re-render at most once per hour so new tools and edits go live quickly
-export const revalidate = 3600
-
-/**
- * Columns the detail page and its children actually read.
+/*
+ * There is deliberately no `export const revalidate` here any more.
  *
- * The previous `select('*')` pulled all 39 columns of `tools` on every render,
- * including `long_description` twice over, the `features` JSONB, and
- * `search_vector` — a tsvector that serialises to kilobytes of lexeme/position
- * JSON that nothing on the page can use.
+ * There used to be (`= 3600`), and it did nothing. `(marketing)/layout.tsx`
+ * calls `cookies()` to resolve the header's signed-in state, which opts this
+ * whole segment tree out of static generation, so the route is server-rendered
+ * on every request and has no Full Route Cache entry for a `revalidate` to
+ * govern. Proof, both reproducible: a production build with hard-coded
+ * `generateStaticParams` writes no `/tools/[slug]` entry into
+ * `.next/prerender-manifest.json` and no HTML under `.next/server/app`; and
+ * production answers `/tools/slack` with
+ * `cache-control: private, no-cache, no-store, must-revalidate` and
+ * `x-vercel-cache: MISS`. Leaving the directive in place was worse than
+ * useless — it read as a documented 1-hour staleness budget that no layer was
+ * actually enforcing, and it would have silently become real the moment
+ * anyone removed the cookie dependency from the layout.
  *
- * `ClaimGuide` takes `EligibilityFields & { id, name, website_url }`, so every
- * column in `ELIGIBILITY_COLUMNS`' eligibility half has to survive here.
+ * What governs freshness now is the tagged Data Cache in
+ * `@/lib/tools/queries`, invalidated on write by `@/lib/tools/revalidate`.
+ * The residual staleness window is documented there.
  */
-const TOOL_DETAIL_COLUMNS = `
-  id, name, slug, description, long_description,
-  category_id, website_url, affiliate_url, logo_url,
-  pricing_model, nonprofit_deal, features, tags, is_verified,
-  save_count, favorite_count, using_count,
-  requires_nonprofit_status, eligible_org_types, eligible_countries,
-  min_budget_usd, max_budget_usd, annual_value_usd,
-  steps_count, time_to_claim_days, difficulty, renewal,
-  nonprofit_url, last_verified_at,
-  category:categories(name, slug, icon)
-`
-
-/**
- * The shape `TOOL_DETAIL_COLUMNS` returns. The Supabase client here is untyped,
- * so an explicit type is what keeps the `ClaimGuide` contract
- * (`EligibilityFields & { id, name, website_url }`) actually checked rather
- * than silently satisfied by `any`.
- */
-type ToolDetail = EligibilityFields & {
-  id: string
-  name: string
-  slug: string
-  description: string
-  long_description: string | null
-  category_id: string | null
-  /** NOT NULL in the schema — `AffiliateLink` relies on that. */
-  website_url: string
-  affiliate_url: string | null
-  logo_url: string | null
-  pricing_model: string
-  features: unknown
-  tags: unknown
-  is_verified: boolean | null
-  save_count: number | null
-  favorite_count: number | null
-  using_count: number | null
-  nonprofit_deal: string | null
-  category: { name: string; slug: string; icon: string } | null
-}
 
 interface Props {
   params: { slug: string }
 }
 
-// Pre-render all verified tool pages at build time for maximum SEO performance
+/**
+ * Retained, but honestly: it does not currently prerender anything. The build
+ * table prints `● /tools/[slug]` and lists the slugs, which is misleading —
+ * with the layout's `cookies()` call in the tree, the prerender attempt bails
+ * and no HTML is written (checked against `.next/prerender-manifest.json`).
+ * It is kept because it costs one query at build time and is exactly what has
+ * to be in place for the route to become static again the day the layout stops
+ * depending on the request.
+ */
 export async function generateStaticParams() {
-  const supabase = createAnonClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  )
-  const { data } = await supabase
+  const { data } = await createPublicClient()
     .from('tools')
     .select('slug')
     .eq('is_verified', true)
@@ -175,12 +145,9 @@ function buildDescription(tool: {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const supabase = await createClient()
-  const { data: tool } = await supabase
-    .from('tools')
-    .select('name, description, pricing_model, nonprofit_deal, logo_url, slug')
-    .eq('slug', params.slug)
-    .single()
+  // Same cached row the page body reads, so the metadata and the visible copy
+  // can never disagree and the request costs one Supabase round trip, not two.
+  const tool = await getToolDetail(params.slug)
 
   if (!tool) return { title: 'Tool Not Found' }
 
@@ -259,30 +226,20 @@ function pricingSummary(model: string, gated: boolean | null): string {
 }
 
 export default async function ToolDetailPage({ params }: Props) {
-  const supabase = await createClient()
+  const tool = await getToolDetail(params.slug)
 
-  const { data } = await supabase
-    .from('tools')
-    .select(TOOL_DETAIL_COLUMNS)
-    .eq('slug', params.slug)
-    .single()
-
-  if (!data) notFound()
-  const tool = data as unknown as ToolDetail
+  if (!tool) notFound()
 
   const features = Array.isArray(tool.features) ? tool.features : []
   const tags = Array.isArray(tool.tags) ? tool.tags : []
 
-  // Fetch related tools and reviews in parallel
-  const [{ data: relatedTools }, { data: reviews }] = await Promise.all([
-    supabase
-      .from('tools')
-      .select('id, name, slug, description, pricing_model, logo_url')
-      .eq('category_id', tool.category_id)
-      .eq('is_verified', true)
-      .neq('id', tool.id)
-      .limit(3),
-    supabase
+  // Related tools come from the tagged cache; reviews deliberately do not.
+  // A review is user-generated and its author expects to see it immediately
+  // after posting, so it stays a live read — one round trip, on a query that
+  // is indexed on tool_id and capped at 50 rows.
+  const [relatedTools, { data: reviews }] = await Promise.all([
+    getRelatedTools(tool.category_id, tool.id),
+    createPublicClient()
       .from('reviews')
       .select('id, rating, comment, created_at, user_id')
       .eq('tool_id', tool.id)

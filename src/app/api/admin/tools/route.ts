@@ -7,6 +7,7 @@ import {
   parsePagination,
   getSearchParams,
 } from '@/lib/api-helpers'
+import { revalidateToolCatalogue } from '@/lib/tools/revalidate'
 
 export async function GET(request: NextRequest) {
   try {
@@ -141,6 +142,10 @@ export async function PATCH(request: NextRequest) {
     if (updateError) {
       return createErrorResponse(updateError.message, 500)
     }
+
+    // Approving or rejecting flips `status`, which decides whether the row is
+    // publicly listed at all — so the catalogue cache has to be dropped.
+    revalidateToolCatalogue()
 
     const message = status === 'approved'
       ? 'Tool approved successfully'
